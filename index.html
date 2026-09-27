@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <title>KAKEI: Vector Counter</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <style>
+    body { margin: 0; background-color: #050508; overflow: hidden; font-family: sans-serif; }
+    #overlay {
+      position: absolute; top: 20px; left: 20px; color: #fff; z-index: 10;
+      background: rgba(0,0,0,0.6); padding: 15px; border-radius: 8px; pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+  <div id="overlay">
+    <h2>KAKEI: 化勁カウンター</h2>
+    <p>・前手で触れていなす（粘：スロー発動）</p>
+    <p>・後手のコンパクトな突きで弾き飛ばす（発）</p>
+    <p>・顔面直撃は首を振っていなす（スリッピング）</p>
+  </div>
+
+  <script type="module">
+    import * as THREE from 'https://unpkg.com/three@0.160.0/build/three.module.js';
+    import { VRButton } from 'https://unpkg.com/three@0.160.0/examples/jsm/webxr/VRButton.js';
+
+    // --- Web Audio（外部ファイル不要のプロシージャル効果音） ---
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    function playSound(type) {
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      const now = audioCtx.currentTime;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+
+      if (type === 'nen') { // 粘：低音の吸着音
+        osc.frequency.setValueAtTime(160, now);
+        osc.frequency.exponentialRampToValueAtTime(80, now + 0.2);
+        gain.gain.setValueAtTime(0.2, now);
+        gain.gain.linearRampToValueAtTime(0, now + 0.2);
+        osc.start(now); osc.stop(now + 0.2);
+      } else if (type === 'hatsu') { // 発：甲高い金属反転音
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(1200, now);
+        osc.frequency.exponentialRampToValueAtTime(2400, now + 0.08);
+        gain.gain.setValueAtTime(0.4, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+        osc.start(now); osc.stop(now + 0.3);
+      } else if (type === 'slip') { // スリップ：風切り超スロー音
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(600, now);
+        osc.frequency.exponentialRampToValueAtTime(150, now + 0.4);
+        gain.gain.setValueAtTime(0.3, now);
+        gain.gain.linearRampToValueAtTime(0, now + 0.4);
+        osc.start(now); osc.stop(now + 0.4);
+      } else if (type === 'hit') { // 被弾：鈍い衝撃音
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(80, now);
+        gain.gain.setValueAtTime(0.5, now);
+        gain.gain.linearRampToValueAtTime(0, now + 0.3);
+        osc.start(now); osc.stop(now + 0.3);
+      }
+    }
+
+    // --- シーン・カメラ・レンダラー ---
+    const scene = new THREE.Scene();
+    scene.fog = new THREE.FogExp2(0x050508, 0.05);
+
+    const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 100);
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.xr.enabled = true;
+    document.body.appendChild(renderer.domElement);
+    document.body.appendChild(VRButton.createButton(renderer));
+
+    // 照明 & グリッド道場
+    const light = new THREE.DirectionalLight(0xffffff, 1.5);
+    light.position.set(0, 10, 5);
+    scene.add(light);
+    scene.add(new THREE.AmbientLight(0x333344));
+
+    const grid = new THREE.GridHelper(30, 30, 0x00ffff, 0x222233);
+    grid.position.y = 0;
+    scene.add(grid);
+
+    // 左右のターゲット壁（敵をぶつける目標）
+    const wallGeo = new THREE.BoxGeometry(0.5, 4, 10);
+    const wallMat = new THREE.MeshStandardMaterial({ color: 0x112233, roughness: 0.5 });
+    const leftWall = new THREE.Mesh(wallGeo, wallMat);
+    leftWall.position.set(-4, 2, -2);
+    const rightWall = new THREE.Mesh(wallGeo, wallMat);
+    rightWall.position.set(4, 2, -2);
+    scene.add(leftWall, rightWall);
+
+    // --- コントローラー設定（手のひらコライダー） ---
+    const controllers = [renderer.xr.getController(0), renderer.xr.getController(1)];
+    const handMeshes = [];
+    controllers.forEach((ctrl, idx) => {
+      scene.add(ctrl);
+      const palm = new THREE.Mesh(
+        new THREE.BoxGeometry(0.08, 0.14, 0.02),
+        new THREE.MeshStandardMaterial({ color: idx === 0 ? 0x00ffcc : 0xffaa00, transparent: true, opacity: 0.7 })
+      );
+      ctrl.add(palm);
+      handMeshes.push(palm);
+      ctrl.userData = { prevPos: new THREE.Vector3(), vel: new THREE.Vector3() };
+    });
+
+    // --- ゲーム状態管理 ---
+    let timeDilation = 1.0;
+    let slowTimer = 0;
+    let state = 'NORMAL'; // 'NORMAL', 'NEN', 'SLIP'
+    let boundEnemy = null;
+    let boundHandIndex = -1;
+    let hp = 3;
+    let score = 0;
+
+    let prevHeadRotY = 0;
+    let headYawVelocity = 0;
+
+    // --- 敵オブジェクト ---
+    const enemies = [];
+    const enemyGeo = new THREE.BoxGeometry(0.3, 0.3, 0.6);
+    const enemyMat = new THREE.MeshStandardMaterial({ color: 0xff3344, emissive: 0x330000 });
+
+    function spawnEnemy() {
+      if (enemies.length >= 2) return;
+      const enemy = new THREE.Mesh(enemyGeo, enemyMat.clone());
+      // 前方120度の扇状からスポーン
+      const angle = (Math.random() - 0.5) * (Math.PI * 0.6);
+      const dist = 8.0;
+      enemy.position.set(Math.sin(angle) * dist, 1.4, -Math.cos(angle) * dist);
+      enemy.userData = {
+        vel: new THREE.Vector3(),
+        speed: 4.5,
+        state: 'APPROACHING' // 'APPROACHING', 'BOUND', 'DEFLECTED', 'CRASHED'
+      };
+      scene.add(enemy);
+      enemies.push(enemy);
+    }
+    setInterval(spawnEnemy, 2500);
+
+    // --- コントローラー振動補助 ---
+    function triggerHaptic(ctrlIndex, intensity, duration) {
+      const session = renderer.xr.getSession();
+      if (!session || !session.inputSources[ctrlIndex]) return;
+      const source = session.inputSources[ctrlIndex];
+      if (source.gamepad && source.gamepad.hapticActuators && source.gamepad.hapticActuators[0]) {
+        source.gamepad.hapticActuators[0].pulse(intensity, duration);
+      }
+    }
+
+    // --- メインループ ---
+    const clock = new THREE.Clock();
+
+    renderer.setAnimationLoop(() => {
+      const rawDelta = clock.getDelta();
+      const delta = rawDelta * timeDilation;
+
+      // HMDの首回旋角速度（Yaw速度）の計測
+      const hmdRotY = camera.rotation.y;
+      headYawVelocity = Math.abs(hmdRotY - prevHeadRotY) / rawDelta;
+      prevHeadRotY = hmdRotY;
+
+      // コントローラー速度の更新
+      controllers.forEach((ctrl, idx) => {
+        ctrl.userData.vel.subVectors(ctrl.position, ctrl.userData.prevPos).divideScalar(rawDelta);
+        ctrl.userData.prevPos.copy(ctrl.position);
+      });
+
+      // スローモーションのタイマー消化
+      if (state !== 'NORMAL') {
+        slowTimer -= rawDelta;
+        if (slowTimer <= 0) {
+          // タイムアウト：後手が出なかった場合は被弾
+          if (boundEnemy) {
+            boundEnemy.userData.state = 'APPROACHING';
+            boundEnemy.userData.vel.set(0, 0, 8); // 突き抜ける
+          }
+          state = 'NORMAL';
+          timeDilation = 1.0;
+          boundEnemy = null;
+        }
+      }
+
+      // 敵の挙動と判定
+      for (let i = enemies.length - 1; i >= 0; i--) {
+        const e = enemies[i];
+
+        if (e.userData.state === 'APPROACHING') {
+          // プレイヤーの頭部に向かって直進
+          const targetPos = new THREE.Vector3(camera.position.x, 1.4, camera.position.z);
+          const dir = new THREE.Vector3().subVectors(targetPos, e.position).normalize();
+          e.position.addScaledVector(dir, e.userData.speed * delta);
+          e.lookAt(targetPos);
+
+          const distToHead = e.position.distanceTo(camera.position);
+
+          // 1. 手による「粘（前手接触）」判定
+          controllers.forEach((ctrl, idx) => {
+            const distToHand = e.position.distanceTo(ctrl.position);
+            if (distToHand < 0.35 && state === 'NORMAL') {
+              // 粘の成立
+              state = 'NEN';
+              timeDilation = 0.3;
+              slowTimer = 0.6; // 0.6秒以内に後手を打つ
+              boundEnemy = e;
+              boundHandIndex = idx;
+              e.userData.state = 'BOUND';
+              playSound('nen');
+              triggerHaptic(idx, 0.4, 60);
+            }
+          });
+
+          // 2. ゴーグル（HMD）スリッピングアウェイ判定
+          if (distToHead < 0.45 && state === 'NORMAL') {
+            if (headYawVelocity > 2.5) { // 素早く首を振った
+              state = 'SLIP';
+              timeDilation = 0.15; // 超スロー
+              slowTimer = 0.45;
+              boundEnemy = e;
+              boundHandIndex = -1; // どちらの手でも発が可能
+              e.userData.state = 'BOUND';
+              playSound('slip');
+            } else if (distToHead < 0.25) { // スリップ失敗：直撃被弾
+              hp--;
+              playSound('hit');
+              scene.remove(e);
+              enemies.splice(i, 1);
+              continue;
+            }
+          }
+
+        } else if (e.userData.state === 'BOUND') {
+          // 前手で吸着中：前手の横に引き込まれるように追従
+          if (boundHandIndex !== -1) {
+            const leadCtrl = controllers[boundHandIndex];
+            e.position.lerp(leadCtrl.position, 0.1);
+          }
+
+          // 「発（後手によるショートストローク）」の判定
+          controllers.forEach((ctrl, idx) => {
+            // スリップ時はいずれの手でもOK、粘時は逆の手（後手）のみ
+            if (boundHandIndex === -1 || idx !== boundHandIndex) {
+              const distToHand = e.position.distanceTo(ctrl.position);
+              const punchSpeed = ctrl.userData.vel.length();
+
+              if (distToHand < 0.4 && punchSpeed > 1.2) { // コンパクトな鋭い突き
+                // 発の成立：突き出したベクトルの方向へ射出
+                const shootDir = ctrl.userData.vel.clone().normalize();
+                e.userData.vel.copy(shootDir).multiplyScalar(14.0);
+                e.userData.state = 'DEFLECTED';
+                playSound('hatsu');
+                triggerHaptic(idx, 1.0, 40);
+
+                // スロー解除
+                state = 'NORMAL';
+                timeDilation = 1.0;
+                boundEnemy = null;
+                score += (state === 'SLIP' ? 300 : 100);
+              }
+            }
+          });
+
+        } else if (e.userData.state === 'DEFLECTED') {
+          // 射出後の高速移動
+          e.position.addScaledVector(e.userData.vel, rawDelta);
+
+          // 左右の壁に激突したら撃破
+          if (Math.abs(e.position.x) > 3.8 || e.position.z < -6) {
+            e.userData.state = 'CRASHED';
+            playSound('hit');
+            scene.remove(e);
+            enemies.splice(i, 1);
+            continue;
+          }
+        }
+      }
+
+      renderer.render(scene, camera);
+    });
+  </script>
+</body>
+</html>
