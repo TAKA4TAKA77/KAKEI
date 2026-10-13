@@ -1291,11 +1291,134 @@
             }
           }
 
-          // 2) 頭部見切り「スリッピング（Slip）」判定（顔面直撃寸前の首回旋）
+         // 2) 頭部見切り「スリッピング（Slip）」判定（顔面直撃寸前の首回旋）
           const distToHead = e.pos.distanceTo(hmdState.pos);
           if (distToHead < 1.15 && distToHead > 0.25 && hmdState.angularSpeed > 1.35 && hmdState.slipCooldown <= 0) {
             e.state = 'SLIPPED';
             e.nenTimer = 2.1;
             e.nenEfficiency = 1.25;
             e.ringMat.opacity = 1.0;
-            // 目の前の側面
+            // 目の前の側面へスロー誘導配置
+            e.pos.set(e.pos.x >= 0 ? 0.32 : -0.32, 1.38, -0.58);
+            hmdState.slipCooldown = 0.9;
+            gameState.timeScale = 0.15;
+            gameState.dilationTimer = 2.1;
+            if (gameState.hp < 3) gameState.hp++; // スリップ成功でHP+1回復
+            audio.playSlipTrigger();
+            showJudgePopup('見切り SLIP!! 0.15x 確定反撃チャンス (HP回復)', '#ff69b4');
+            updateHudDisplay();
+          }
+
+          // 3) プレイヤー被弾判定
+          if (e.pos.z > -0.18) {
+            spawnBurstParticles(e.pos, 0xff1744, 15);
+            audio.playClashPenalty();
+            scene.remove(e.group);
+            enemies.splice(i, 1);
+            gameState.hp--;
+            gameState.chain = 0;
+            showJudgePopup('DAMAGE! 被弾', '#ff1744');
+            if (gameState.hp <= 0) {
+              gameState.isGameOver = true;
+              elBannerTitle.textContent = 'GAME OVER - 居着き敗北';
+              elBannerSub.textContent = 'トリガーまたは右下の「即リトライ」で即座に再挑戦できます';
+            }
+            updateHudDisplay();
+            continue;
+          }
+        } else if (e.state === 'NEN' || e.state === 'SLIPPED') {
+          // 「粘」中は前手の円弧軌道に吸い付いて誘導される
+          e.nenTimer -= rawDt;
+          if (e.state === 'NEN') {
+            const targetArcPos = frontHand.pos.clone().addScaledVector(frontHand.normal, 0.28);
+            e.pos.lerp(targetArcPos, 0.28);
+          }
+          e.targetRing.lookAt(hmdState.pos);
+
+          // 後手「発（寸勁）」接触判定
+          const distToRear = e.pos.distanceTo(rearHand.pos);
+          const rearSpeed = rearHand.vel.length();
+          if (distToRear < e.radius + 0.34 && (rearSpeed > 1.1 || pcInput.sunkeiTimer > 0)) {
+            executeSunkeiLaunch(e, rearHand, frontHand);
+          } else if (e.nenTimer <= 0) {
+            // 時間切れで離脱撃破扱い
+            scene.remove(e.group);
+            enemies.splice(i, 1);
+            gameState.killsInWave++;
+          }
+        } else if (e.state === 'LAUNCHED') {
+          // 射出された敵の高速移動＆他敵とのビリヤード連鎖衝突判定
+          e.pos.addScaledVector(e.vel, rawDt);
+          e.bodyMesh.rotation.x += 12 * rawDt;
+          e.bodyMesh.rotation.y += 12 * rawDt;
+
+          for (let j = enemies.length - 1; j >= 0; j--) {
+            if (i === j) continue;
+            const other = enemies[j];
+            if (other.state === 'LAUNCHED') continue;
+
+            if (e.pos.distanceTo(other.pos) < e.radius + other.radius + 0.35) {
+              // ビリヤード連鎖撃破！
+              gameState.chain++;
+              gameState.killsInWave++;
+              const bonus = 250 * gameState.chain;
+              gameState.score += bonus;
+              audio.playChainHarmony(gameState.chain);
+              spawnBurstParticles(other.pos, other.baseColor, 22);
+              spawnShockwaveRing(other.pos, e.vel, 0x00ffcc, 2.6);
+              showJudgePopup(`化勁ビリヤード ${gameState.chain} CHAIN! (+${bonus})`, '#00ffcc');
+
+              scene.remove(other.group);
+              enemies.splice(j, 1);
+              if (j < i) i--;
+              updateHudDisplay();
+            }
+          }
+
+          // 遠方到達で消滅
+          if (e.pos.length() > 22) {
+            scene.remove(e.group);
+            enemies.splice(i, 1);
+            gameState.killsInWave++;
+          }
+        }
+      }
+
+      // パーティクル＆衝撃波リング更新
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.life -= rawDt;
+        p.mesh.position.addScaledVector(p.vel, rawDt);
+        p.mat.opacity = Math.max(0, p.life / 0.55);
+        if (p.life <= 0) {
+          scene.remove(p.mesh);
+          particles.splice(i, 1);
+        }
+      }
+
+      for (let i = shockwaves.length - 1; i >= 0; i--) {
+        const s = shockwaves[i];
+        s.life -= rawDt;
+        const sc = 1 + (0.35 - s.life) * s.scaleSpeed;
+        s.mesh.scale.set(sc, sc, 1);
+        s.mat.opacity = Math.max(0, s.life / 0.35);
+        if (s.life <= 0) {
+          scene.remove(s.mesh);
+          shockwaves.splice(i, 1);
+        }
+      }
+
+      renderer.render(scene, camera);
+    }
+
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    startWave(0);
+    renderer.setAnimationLoop(animate);
+  </script>
+</body>
+</html>
