@@ -1,285 +1,1301 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="utf-8">
-  <title>KAKEI: Vector Counter</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>KAKEI（化勁）: Vector Counter - WebXR Martial Arts Action</title>
   <style>
-    body { margin: 0; background-color: #050508; overflow: hidden; font-family: sans-serif; }
+    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+    body {
+      background: #05070c;
+      color: #e2f1ff;
+      font-family: 'Segoe UI', 'Hiragino Kaku Gothic ProN', 'Meiryo', sans-serif;
+      overflow: hidden;
+      width: 100vw;
+      height: 100vh;
+    }
     #overlay {
-      position: absolute; top: 20px; left: 20px; color: #fff; z-index: 10;
-      background: rgba(0,0,0,0.6); padding: 15px; border-radius: 8px; pointer-events: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 20px 28px;
+      z-index: 10;
+    }
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+    }
+    .brand-box {
+      background: rgba(8, 16, 32, 0.78);
+      border: 1px solid rgba(0, 229, 255, 0.4);
+      border-left: 4px solid #00e5ff;
+      padding: 12px 18px;
+      border-radius: 8px;
+      backdrop-filter: blur(8px);
+      pointer-events: auto;
+    }
+    .brand-title {
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      color: #00e5ff;
+      text-shadow: 0 0 12px rgba(0, 229, 255, 0.5);
+    }
+    .brand-sub {
+      font-size: 12px;
+      color: #9ab8d4;
+      margin-top: 4px;
+    }
+    .hud-stats {
+      display: flex;
+      gap: 14px;
+      background: rgba(8, 16, 32, 0.78);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      padding: 10px 18px;
+      border-radius: 8px;
+      backdrop-filter: blur(8px);
+    }
+    .stat-item {
+      text-align: center;
+      min-width: 72px;
+    }
+    .stat-label {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #7f9eb8;
+    }
+    .stat-val {
+      font-size: 22px;
+      font-weight: 800;
+      color: #ffffff;
+      margin-top: 2px;
+    }
+    .stat-val.cyan { color: #00e5ff; }
+    .stat-val.gold { color: #ffd54f; }
+    .stat-val.hp { color: #ff5252; letter-spacing: 3px; }
+    #center-banner {
+      align-self: center;
+      text-align: center;
+      transition: all 0.2s ease;
+    }
+    .wave-announce {
+      font-size: 28px;
+      font-weight: 900;
+      letter-spacing: 0.12em;
+      color: #ffffff;
+      text-shadow: 0 0 20px rgba(0, 229, 255, 0.8);
+      margin-bottom: 6px;
+    }
+    .wave-sub {
+      font-size: 14px;
+      color: #80deea;
+      background: rgba(0, 30, 50, 0.7);
+      padding: 4px 14px;
+      border-radius: 20px;
+      display: inline-block;
+      border: 1px solid rgba(0, 229, 255, 0.35);
+    }
+    .judge-popup {
+      margin-top: 12px;
+      font-size: 24px;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      min-height: 36px;
+      text-shadow: 0 0 16px currentColor;
+    }
+    .bottom-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      gap: 16px;
+    }
+    .controls-card {
+      background: rgba(8, 16, 32, 0.82);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      padding: 12px 16px;
+      border-radius: 8px;
+      font-size: 12px;
+      line-height: 1.65;
+      color: #bdd6ee;
+      max-width: 560px;
+      pointer-events: auto;
+    }
+    .controls-card b { color: #00e5ff; }
+    .controls-card .gold { color: #ffd54f; font-weight: 700; }
+    .controls-card .mag { color: #ff69b4; font-weight: 700; }
+    .btn-group {
+      display: flex;
+      gap: 10px;
+      pointer-events: auto;
+    }
+    .ui-btn {
+      background: linear-gradient(135deg, #00b4d8, #0077b6);
+      color: #fff;
+      border: 1px solid #90e0ef;
+      padding: 10px 18px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      letter-spacing: 0.05em;
+      box-shadow: 0 4px 14px rgba(0, 180, 216, 0.4);
+      transition: transform 0.1s, background 0.2s;
+    }
+    .ui-btn:hover { transform: translateY(-1px); background: linear-gradient(135deg, #00e5ff, #0096c7); }
+    .ui-btn:active { transform: translateY(1px); }
+    #dilation-vignette {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 5;
+      transition: box-shadow 0.15s ease, backdrop-filter 0.15s ease;
     }
   </style>
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+      }
+    }
+  </script>
 </head>
 <body>
+  <div id="dilation-vignette"></div>
+
   <div id="overlay">
-    <h2>KAKEI: 化勁カウンター</h2>
-    <p>・前手で触れていなす（粘：スロー発動）</p>
-    <p>・後手のコンパクトな突きで弾き飛ばす（発）</p>
-    <p>・顔面直撃は首を振っていなす（スリッピング）</p>
+    <div class="top-bar">
+      <div class="brand-box">
+        <div class="brand-title">KAKEI（化勁）: VECTOR COUNTER</div>
+        <div class="brand-sub">前手「粘(0.3x)」円弧誘導 → 後手「発(寸勁)」運動量借用 ／ 首「スリップ(0.15x)」見切り反撃</div>
+      </div>
+
+      <div class="hud-stats">
+        <div class="stat-item">
+          <div class="stat-label">WAVE</div>
+          <div class="stat-val cyan" id="hud-wave">1 / 5</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-label">TIME SCALE</div>
+          <div class="stat-val gold" id="hud-timescale">1.00x</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-label">SCORE</div>
+          <div class="stat-val" id="hud-score">0</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-label">CHAIN</div>
+          <div class="stat-val cyan" id="hud-chain">0</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-label">HP</div>
+          <div class="stat-val hp" id="hud-hp">♥♥♥</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="center-banner">
+      <div class="wave-announce" id="banner-title">WAVE 1: 聴勁の覚醒</div>
+      <div class="wave-sub" id="banner-sub">前手（30°〜60°）で触れて減速・円弧誘導し、短いストロークの「寸勁」で撃ち返せ</div>
+      <div class="judge-popup" id="judge-text"></div>
+    </div>
+
+    <div class="bottom-bar">
+      <div class="controls-card">
+        <div><b>【Meta Quest 3 / 3S (VRモード)】</b> 画面下部の <b>ENTER VR</b> を押して即起動。</div>
+        <div>・<b>前手「粘」</b>: 体幹から前に出した手で敵に30°〜60°で触れると<b>0.3倍速</b>。円弧を描いて後続の敵へ誘導。</div>
+        <div>・<span class="gold">後手「発（寸勁）」</span>: 15cm以内の短いストロークで鋭く突くと最大火力＆貫通ビリヤード連鎖（大振りは威力減衰）。</div>
+        <div>・<span class="mag">首「スリップ」</span>: 顔面直撃寸前に頭を素早く傾ける/回すと<b>0.15倍速</b>発動！「粘」省略でゼロ距離寸勁を叩き込める。</div>
+        <div style="margin-top:4px; color:#8fb8de;"><b>【PCテスト操作】</b> マウス移動：前手（円弧誘導）／ <b>左クリックまたはSpace</b>：後手「寸勁」／ <b>ホイール</b>：前手角度調整 ／ <b>Q・Eキーまたは右クリック</b>：首スリップ</div>
+      </div>
+
+      <div class="btn-group">
+        <button class="ui-btn" id="btn-audio">🔊 音響エンジン起動</button>
+        <button class="ui-btn" id="btn-wave-skip">⏭ 次のWaveへ</button>
+        <button class="ui-btn" id="btn-restart">🔄 即リトライ</button>
+      </div>
+    </div>
   </div>
 
   <script type="module">
-    import * as THREE from 'https://unpkg.com/three@0.160.0/build/three.module.js';
-    import { VRButton } from 'https://unpkg.com/three@0.160.0/examples/jsm/webxr/VRButton.js';
+    import * as THREE from 'three';
+    import { VRButton } from 'three/addons/webxr/VRButton.js';
 
-    // --- Web Audio（外部ファイル不要のプロシージャル効果音） ---
-    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    function playSound(type) {
-      if (audioCtx.state === 'suspended') audioCtx.resume();
-      const now = audioCtx.currentTime;
-      const osc = audioCtx.createOscillator();
-      const gain = audioCtx.createGain();
-      osc.connect(gain);
-      gain.connect(audioCtx.destination);
-
-      if (type === 'nen') { // 粘：低音の吸着音
-        osc.frequency.setValueAtTime(160, now);
-        osc.frequency.exponentialRampToValueAtTime(80, now + 0.2);
-        gain.gain.setValueAtTime(0.2, now);
-        gain.gain.linearRampToValueAtTime(0, now + 0.2);
-        osc.start(now); osc.stop(now + 0.2);
-      } else if (type === 'hatsu') { // 発：甲高い金属反転音
-        osc.type = 'triangle';
-        osc.frequency.setValueAtTime(1200, now);
-        osc.frequency.exponentialRampToValueAtTime(2400, now + 0.08);
-        gain.gain.setValueAtTime(0.4, now);
-        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
-        osc.start(now); osc.stop(now + 0.3);
-      } else if (type === 'slip') { // スリップ：風切り超スロー音
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(600, now);
-        osc.frequency.exponentialRampToValueAtTime(150, now + 0.4);
-        gain.gain.setValueAtTime(0.3, now);
-        gain.gain.linearRampToValueAtTime(0, now + 0.4);
-        osc.start(now); osc.stop(now + 0.4);
-      } else if (type === 'hit') { // 被弾：鈍い衝撃音
-        osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(80, now);
-        gain.gain.setValueAtTime(0.5, now);
-        gain.gain.linearRampToValueAtTime(0, now + 0.3);
-        osc.start(now); osc.stop(now + 0.3);
+    // =========================================================================
+    // 1. Web Audio API プロシージャル音響＆聴勁フィードバック・エンジン
+    // =========================================================================
+    class KakeiAudioEngine {
+      constructor() {
+        this.ctx = null;
+        this.masterGain = null;
+        this.bgmFilter = null;
+        this.bgmGain = null;
+        this.isInitialized = false;
+        this.heartbeatTimer = 0;
+        // ペンタトニック音階 (C4, D4, E4, G4, A4, C5, D5, E5, G5, A5, C6)
+        this.pentatonic = [261.63, 293.66, 329.63, 392.00, 440.00, 523.25, 587.33, 659.25, 783.99, 880.00, 1046.50];
       }
-    }
 
-    // --- シーン・カメラ・レンダラー ---
-    const scene = new THREE.Scene();
-    scene.fog = new THREE.FogExp2(0x050508, 0.05);
+      init() {
+        if (this.isInitialized) return;
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        this.ctx = new AudioCtx();
+        this.masterGain = this.ctx.createGain();
+        this.masterGain.gain.value = 0.7;
+        this.masterGain.connect(this.ctx.destination);
 
-    const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 100);
-    const renderer = new THREE.WebGLRenderer({ antialias: true });
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.xr.enabled = true;
-    document.body.appendChild(renderer.domElement);
-    document.body.appendChild(VRButton.createButton(renderer));
+        // 環境ドローンBGM（ローパスフィルター直結で「粘」の水没静寂を表現）
+        this.bgmFilter = this.ctx.createBiquadFilter();
+        this.bgmFilter.type = 'lowpass';
+        this.bgmFilter.frequency.value = 1400;
+        this.bgmFilter.Q.value = 4.0;
 
-    // 照明 & グリッド道場
-    const light = new THREE.DirectionalLight(0xffffff, 1.5);
-    light.position.set(0, 10, 5);
-    scene.add(light);
-    scene.add(new THREE.AmbientLight(0x333344));
+        this.bgmGain = this.ctx.createGain();
+        this.bgmGain.gain.value = 0.16;
 
-    const grid = new THREE.GridHelper(30, 30, 0x00ffff, 0x222233);
-    grid.position.y = 0;
-    scene.add(grid);
+        const osc1 = this.ctx.createOscillator();
+        const osc2 = this.ctx.createOscillator();
+        osc1.type = 'sawtooth';
+        osc2.type = 'triangle';
+        osc1.frequency.value = 55.0; // A1
+        osc2.frequency.value = 82.41; // E2
+        osc1.connect(this.bgmFilter);
+        osc2.connect(this.bgmFilter);
+        this.bgmFilter.connect(this.bgmGain);
+        this.bgmGain.connect(this.masterGain);
+        osc1.start();
+        osc2.start();
 
-    // 左右のターゲット壁（敵をぶつける目標）
-    const wallGeo = new THREE.BoxGeometry(0.5, 4, 10);
-    const wallMat = new THREE.MeshStandardMaterial({ color: 0x112233, roughness: 0.5 });
-    const leftWall = new THREE.Mesh(wallGeo, wallMat);
-    leftWall.position.set(-4, 2, -2);
-    const rightWall = new THREE.Mesh(wallGeo, wallMat);
-    rightWall.position.set(4, 2, -2);
-    scene.add(leftWall, rightWall);
-
-    // --- コントローラー設定（手のひらコライダー） ---
-    const controllers = [renderer.xr.getController(0), renderer.xr.getController(1)];
-    const handMeshes = [];
-    controllers.forEach((ctrl, idx) => {
-      scene.add(ctrl);
-      const palm = new THREE.Mesh(
-        new THREE.BoxGeometry(0.08, 0.14, 0.02),
-        new THREE.MeshStandardMaterial({ color: idx === 0 ? 0x00ffcc : 0xffaa00, transparent: true, opacity: 0.7 })
-      );
-      ctrl.add(palm);
-      handMeshes.push(palm);
-      ctrl.userData = { prevPos: new THREE.Vector3(), vel: new THREE.Vector3() };
-    });
-
-    // --- ゲーム状態管理 ---
-    let timeDilation = 1.0;
-    let slowTimer = 0;
-    let state = 'NORMAL'; // 'NORMAL', 'NEN', 'SLIP'
-    let boundEnemy = null;
-    let boundHandIndex = -1;
-    let hp = 3;
-    let score = 0;
-
-    let prevHeadRotY = 0;
-    let headYawVelocity = 0;
-
-    // --- 敵オブジェクト ---
-    const enemies = [];
-    const enemyGeo = new THREE.BoxGeometry(0.3, 0.3, 0.6);
-    const enemyMat = new THREE.MeshStandardMaterial({ color: 0xff3344, emissive: 0x330000 });
-
-    function spawnEnemy() {
-      if (enemies.length >= 2) return;
-      const enemy = new THREE.Mesh(enemyGeo, enemyMat.clone());
-      // 前方120度の扇状からスポーン
-      const angle = (Math.random() - 0.5) * (Math.PI * 0.6);
-      const dist = 8.0;
-      enemy.position.set(Math.sin(angle) * dist, 1.4, -Math.cos(angle) * dist);
-      enemy.userData = {
-        vel: new THREE.Vector3(),
-        speed: 4.5,
-        state: 'APPROACHING' // 'APPROACHING', 'BOUND', 'DEFLECTED', 'CRASHED'
-      };
-      scene.add(enemy);
-      enemies.push(enemy);
-    }
-    setInterval(spawnEnemy, 2500);
-
-    // --- コントローラー振動補助 ---
-    function triggerHaptic(ctrlIndex, intensity, duration) {
-      const session = renderer.xr.getSession();
-      if (!session || !session.inputSources[ctrlIndex]) return;
-      const source = session.inputSources[ctrlIndex];
-      if (source.gamepad && source.gamepad.hapticActuators && source.gamepad.hapticActuators[0]) {
-        source.gamepad.hapticActuators[0].pulse(intensity, duration);
+        this.isInitialized = true;
       }
-    }
 
-    // --- メインループ ---
-    const clock = new THREE.Clock();
-
-    renderer.setAnimationLoop(() => {
-      const rawDelta = clock.getDelta();
-      const delta = rawDelta * timeDilation;
-
-      // HMDの首回旋角速度（Yaw速度）の計測
-      const hmdRotY = camera.rotation.y;
-      headYawVelocity = Math.abs(hmdRotY - prevHeadRotY) / rawDelta;
-      prevHeadRotY = hmdRotY;
-
-      // コントローラー速度の更新
-      controllers.forEach((ctrl, idx) => {
-        ctrl.userData.vel.subVectors(ctrl.position, ctrl.userData.prevPos).divideScalar(rawDelta);
-        ctrl.userData.prevPos.copy(ctrl.position);
-      });
-
-      // スローモーションのタイマー消化
-      if (state !== 'NORMAL') {
-        slowTimer -= rawDelta;
-        if (slowTimer <= 0) {
-          // タイムアウト：後手が出なかった場合は被弾
-          if (boundEnemy) {
-            boundEnemy.userData.state = 'APPROACHING';
-            boundEnemy.userData.vel.set(0, 0, 8); // 突き抜ける
-          }
-          state = 'NORMAL';
-          timeDilation = 1.0;
-          boundEnemy = null;
+      resume() {
+        if (!this.isInitialized) this.init();
+        if (this.ctx && this.ctx.state === 'suspended') {
+          this.ctx.resume();
         }
       }
 
-      // 敵の挙動と判定
+      // タイムディレーションに応じたローパス制御（聴勁の水没感 / スリップの無音化）
+      updateTimeScaleAudio(timeScale, dt) {
+        if (!this.isInitialized) return;
+        const now = this.ctx.currentTime;
+        if (timeScale <= 0.16) {
+          // スリップ発動時（0.15x）：BGMを極限まで絞り、心音を鳴らす
+          this.bgmFilter.frequency.setTargetAtTime(110, now, 0.04);
+          this.bgmGain.gain.setTargetAtTime(0.03, now, 0.04);
+          this.heartbeatTimer -= dt;
+          if (this.heartbeatTimer <= 0) {
+            this.playHeartbeat();
+            this.heartbeatTimer = 0.55;
+          }
+        } else if (timeScale <= 0.35) {
+          // 粘発動時（0.3x）：水中に潜ったような240Hzローパス
+          this.bgmFilter.frequency.setTargetAtTime(240, now, 0.05);
+          this.bgmGain.gain.setTargetAtTime(0.18, now, 0.05);
+        } else {
+          // 通常時（1.0x）
+          this.bgmFilter.frequency.setTargetAtTime(1400, now, 0.1);
+          this.bgmGain.gain.setTargetAtTime(0.15, now, 0.1);
+        }
+      }
+
+      // 「粘（Nen）」吸着成功音：柔らかく吸い付く水滴共鳴パルス
+      playNenAttach() {
+        this.resume();
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(320, now);
+        osc.frequency.exponentialRampToValueAtTime(140, now + 0.22);
+        gain.gain.setValueAtTime(0.35, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.24);
+        osc.connect(gain);
+        gain.connect(this.masterGain);
+        osc.start(now);
+        osc.stop(now + 0.25);
+      }
+
+      // 「スリップ（Slip）」発動音：高周波のキーンという耳鳴り＋時間凍結チャイム
+      playSlipTrigger() {
+        this.resume();
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(1760, now);
+        osc.frequency.exponentialRampToValueAtTime(880, now + 0.45);
+        gain.gain.setValueAtTime(0.25, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.48);
+        osc.connect(gain);
+        gain.connect(this.masterGain);
+        osc.start(now);
+        osc.stop(now + 0.5);
+        this.playHeartbeat();
+      }
+
+      // 心音「ドクン…」
+      playHeartbeat() {
+        if (!this.isInitialized) return;
+        const now = this.ctx.currentTime;
+        [0, 0.14].forEach((offset, idx) => {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(idx === 0 ? 75 : 62, now + offset);
+          osc.frequency.exponentialRampToValueAtTime(28, now + offset + 0.12);
+          gain.gain.setValueAtTime(idx === 0 ? 0.55 : 0.38, now + offset);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + offset + 0.13);
+          osc.connect(gain);
+          gain.connect(this.masterGain);
+          osc.start(now + offset);
+          osc.stop(now + offset + 0.14);
+        });
+      }
+
+      // 「発（寸勁）」インパクト音：isCritical=trueなら重低音サブベース＋空間破砕音
+      playSunkeiImpact(isCritical = true) {
+        this.resume();
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = isCritical ? 'triangle' : 'sine';
+        osc.frequency.setValueAtTime(isCritical ? 190 : 140, now);
+        osc.frequency.exponentialRampToValueAtTime(32, now + (isCritical ? 0.35 : 0.2));
+        gain.gain.setValueAtTime(isCritical ? 0.85 : 0.5, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + (isCritical ? 0.38 : 0.22));
+        osc.connect(gain);
+        gain.connect(this.masterGain);
+        osc.start(now);
+        osc.stop(now + 0.4);
+
+        if (isCritical) {
+          // クリティカル寸勁の倍音キラメキ
+          const chime = this.ctx.createOscillator();
+          const cGain = this.ctx.createGain();
+          chime.type = 'sine';
+          chime.frequency.setValueAtTime(1046.5, now);
+          chime.frequency.exponentialRampToValueAtTime(2093.0, now + 0.25);
+          cGain.gain.setValueAtTime(0.3, now);
+          cGain.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
+          chime.connect(cGain);
+          cGain.connect(this.masterGain);
+          chime.start(now);
+          chime.stop(now + 0.3);
+        }
+      }
+
+      // 「居着き（大振り / 角度不一致）」の金属弾かれ音
+      playClashPenalty() {
+        this.resume();
+        const now = this.ctx.currentTime;
+        [210, 337, 512].forEach((freq) => {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'square';
+          osc.frequency.setValueAtTime(freq, now);
+          osc.frequency.linearRampToValueAtTime(freq * 0.85, now + 0.16);
+          gain.gain.setValueAtTime(0.14, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+          osc.connect(gain);
+          gain.connect(this.masterGain);
+          osc.start(now);
+          osc.stop(now + 0.19);
+        });
+      }
+
+      // ビリヤード連鎖撃破のペンタトニック和音ベル
+      playChainHarmony(chainIndex) {
+        this.resume();
+        const now = this.ctx.currentTime;
+        const noteIdx = Math.min(chainIndex, this.pentatonic.length - 1);
+        const baseFreq = this.pentatonic[noteIdx];
+
+        [baseFreq, baseFreq * 1.5].forEach((f, i) => {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = i === 0 ? 'sine' : 'triangle';
+          osc.frequency.setValueAtTime(f, now);
+          gain.gain.setValueAtTime(i === 0 ? 0.35 : 0.15, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
+          osc.connect(gain);
+          gain.connect(this.masterGain);
+          osc.start(now);
+          osc.stop(now + 0.48);
+        });
+      }
+    }
+
+    const audio = new KakeiAudioEngine();
+
+    // =========================================================================
+    // 2. Three.js シーン・カメラ・WebXR・空間ステージ構築
+    // =========================================================================
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x05070c);
+    scene.fog = new THREE.FogExp2(0x05070c, 0.045);
+
+    const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.05, 80);
+    camera.position.set(0, 1.6, 0);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.xr.enabled = true;
+    document.body.appendChild(renderer.domElement);
+
+    const vrBtn = VRButton.createButton(renderer);
+    vrBtn.addEventListener('click', () => audio.resume());
+    document.body.appendChild(vrBtn);
+
+    // ライティング
+    const ambientLight = new THREE.AmbientLight(0x80b8ff, 0.7);
+    scene.add(ambientLight);
+
+    const dirLight = new THREE.DirectionalLight(0xffffff, 1.4);
+    dirLight.position.set(3, 8, 4);
+    scene.add(dirLight);
+
+    const pointLight = new THREE.PointLight(0x00e5ff, 2.0, 15);
+    pointLight.position.set(0, 2.2, -2.0);
+    scene.add(pointLight);
+
+    // 前方180度・扇状アリーナのグリッド床
+    const arenaGroup = new THREE.Group();
+    scene.add(arenaGroup);
+
+    const polarGrid = new THREE.PolarGridHelper(14, 18, 10, 64, 0x005577, 0x00283d);
+    polarGrid.position.y = 0.01;
+    arenaGroup.add(polarGrid);
+
+    // 前方180度境界を示すネオンアーク
+    const arcGeo = new THREE.RingGeometry(1.15, 1.2, 48, 1, 0, Math.PI);
+    arcGeo.rotateX(-Math.PI / 2);
+    const arcMat = new THREE.MeshBasicMaterial({ color: 0x00e5ff, side: THREE.DoubleSide, transparent: true, opacity: 0.55 });
+    const frontArc = new THREE.Mesh(arcGeo, arcMat);
+    frontArc.position.set(0, 0.02, 0);
+    arenaGroup.add(frontArc);
+
+    // Wave 1用：理想の前手接触角（30°〜60°）を示す空間ガイドリング
+    const guideGroup = new THREE.Group();
+    const guideRingGeo = new THREE.RingGeometry(0.18, 0.22, 32);
+    const guideRingMat = new THREE.MeshBasicMaterial({ color: 0x00ffcc, side: THREE.DoubleSide, transparent: true, opacity: 0.65 });
+    const guideRingMesh = new THREE.Mesh(guideRingGeo, guideRingMat);
+    guideGroup.add(guideRingMesh);
+    guideGroup.position.set(0.28, 1.38, -0.55);
+    guideGroup.rotation.y = THREE.MathUtils.degToRad(-42);
+    scene.add(guideGroup);
+
+    // VR空間内でも視認できる3DフローティングHUDキャンバス
+    const vrHudCanvas = document.createElement('canvas');
+    vrHudCanvas.width = 512;
+    vrHudCanvas.height = 160;
+    const vrHudCtx = vrHudCanvas.getContext('2d');
+    const vrHudTex = new THREE.CanvasTexture(vrHudCanvas);
+    const vrHudMat = new THREE.MeshBasicMaterial({ map: vrHudTex, transparent: true });
+    const vrHudMesh = new THREE.Mesh(new THREE.PlaneGeometry(1.5, 0.47), vrHudMat);
+    vrHudMesh.position.set(0, 2.35, -2.6);
+    scene.add(vrHudMesh);
+
+    function updateVrHudCanvas(waveTitle, statusText, statusColor = '#00e5ff') {
+      vrHudCtx.clearRect(0, 0, 512, 160);
+      vrHudCtx.fillStyle = 'rgba(4, 12, 26, 0.78)';
+      vrHudCtx.strokeStyle = statusColor;
+      vrHudCtx.lineWidth = 3;
+      vrHudCtx.strokeRect(6, 6, 500, 148);
+      vrHudCtx.fillRect(6, 6, 500, 148);
+
+      vrHudCtx.fillStyle = '#9be7ff';
+      vrHudCtx.font = 'bold 22px sans-serif';
+      vrHudCtx.textAlign = 'center';
+      vrHudCtx.fillText(waveTitle, 256, 42);
+
+      vrHudCtx.fillStyle = statusColor;
+      vrHudCtx.font = 'bold 30px sans-serif';
+      vrHudCtx.fillText(statusText, 256, 92);
+
+      vrHudCtx.fillStyle = '#ffffff';
+      vrHudCtx.font = 'bold 20px sans-serif';
+      vrHudCtx.fillText(`HP: ${'♥'.repeat(Math.max(0, gameState.hp))}   SCORE: ${gameState.score}   CHAIN: ${gameState.chain}`, 256, 134);
+      vrHudTex.needsUpdate = true;
+    }
+
+    // =========================================================================
+    // 3. プレイヤーの身体トラッキング（HMD、前手「粘」、後手「発」）
+    // =========================================================================
+    class HandTracker {
+      constructor(colorHex, isFrontDefault) {
+        this.mesh = new THREE.Group();
+        // 掌（パーム面）を表す八角形ディスクと法線矢印
+        const palmGeo = new THREE.CylinderGeometry(0.11, 0.11, 0.018, 16);
+        palmGeo.rotateX(Math.PI / 2);
+        this.palmMat = new THREE.MeshStandardMaterial({
+          color: colorHex,
+          emissive: colorHex,
+          emissiveIntensity: 0.45,
+          transparent: true,
+          opacity: 0.85
+        });
+        this.palmMesh = new THREE.Mesh(palmGeo, this.palmMat);
+        this.mesh.add(this.palmMesh);
+
+        // 法線ベクトル（面の向き）インジケーター
+        const arrowGeo = new THREE.ConeGeometry(0.025, 0.09, 8);
+        arrowGeo.rotateX(Math.PI / 2);
+        arrowGeo.translate(0, 0, -0.07);
+        const arrowMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+        this.mesh.add(new THREE.Mesh(arrowGeo, arrowMat));
+
+        scene.add(this.mesh);
+
+        this.pos = new THREE.Vector3(isFrontDefault ? -0.2 : 0.2, 1.35, isFrontDefault ? -0.55 : -0.3);
+        this.prevPos = this.pos.clone();
+        this.vel = new THREE.Vector3();
+        this.prevVel = new THREE.Vector3();
+        this.accel = 0;
+        this.normal = new THREE.Vector3(0, 0, -1);
+
+        // 寸勁（ショートストローク）計測用：加速開始地点の記録
+        this.strokeStartPos = this.pos.clone();
+        this.isAccelerating = false;
+        this.peakAccel = 0;
+        this.currentStrokeDist = 0;
+        this.controller = null;
+      }
+
+      update(dt) {
+        if (dt <= 0) return;
+        this.vel.subVectors(this.pos, this.prevPos).divideScalar(dt);
+        const speed = this.vel.length();
+        const prevSpeed = this.prevVel.length();
+        this.accel = (speed - prevSpeed) / dt;
+
+        // 突き出し（前方への移動）開始時のストローク計測
+        if (speed > 0.9 && this.vel.z < -0.3) {
+          if (!this.isAccelerating) {
+            this.isAccelerating = true;
+            this.strokeStartPos.copy(this.prevPos);
+            this.peakAccel = Math.max(8, this.accel);
+          } else {
+            this.peakAccel = Math.max(this.peakAccel, this.accel);
+          }
+          this.currentStrokeDist = this.pos.distanceTo(this.strokeStartPos);
+        } else if (speed < 0.45) {
+          this.isAccelerating = false;
+          this.peakAccel = 0;
+          this.currentStrokeDist = 0;
+        }
+
+        this.prevPos.copy(this.pos);
+        this.prevVel.copy(this.vel);
+        this.mesh.position.copy(this.pos);
+      }
+
+      pulseHaptics(intensity = 0.6, durationMs = 60) {
+        if (this.controller && this.controller.gamepad && this.controller.gamepad.hapticActuators && this.controller.gamepad.hapticActuators[0]) {
+          try {
+            this.controller.gamepad.hapticActuators[0].pulse(intensity, durationMs);
+          } catch (e) {}
+        }
+      }
+    }
+
+    const leftHand = new HandTracker(0x00e5ff, true);
+    const rightHand = new HandTracker(0xffd54f, false);
+
+    // WebXR コントローラーセットアップ
+    const controller0 = renderer.xr.getController(0);
+    const controller1 = renderer.xr.getController(1);
+    scene.add(controller0);
+    scene.add(controller1);
+
+    controller0.addEventListener('connected', (e) => {
+      leftHand.controller = e.data;
+    });
+    controller1.addEventListener('connected', (e) => {
+      rightHand.controller = e.data;
+    });
+    controller0.addEventListener('selectstart', () => {
+      audio.resume();
+      if (gameState.isGameOver || gameState.isVictory) resetGame();
+    });
+    controller1.addEventListener('selectstart', () => {
+      audio.resume();
+      if (gameState.isGameOver || gameState.isVictory) resetGame();
+    });
+
+    // HMD（頭部）トラッキング：スリッピング（首の回旋見切り）判定用
+    const hmdState = {
+      pos: new THREE.Vector3(0, 1.6, 0),
+      prevQuat: new THREE.Quaternion(),
+      angularSpeed: 0,
+      slipCooldown: 0
+    };
+
+    // PCブラウザでのテスト操作用ステート
+    const pcInput = {
+      mouseX: 0,
+      mouseY: 0,
+      frontAngleDeg: 45, // 適正30〜60度内の初期値
+      sunkeiTimer: 0,
+      strokeMode: 0.09 // 9cmの理想寸勁ストローク
+    };
+
+    window.addEventListener('mousemove', (e) => {
+      pcInput.mouseX = (e.clientX / window.innerWidth) * 2 - 1;
+      pcInput.mouseY = -(e.clientY / window.innerHeight) * 2 + 1;
+    });
+
+    window.addEventListener('wheel', (e) => {
+      pcInput.frontAngleDeg = THREE.MathUtils.clamp(pcInput.frontAngleDeg + (e.deltaY > 0 ? -5 : 5), 5, 85);
+      showJudgePopup(`前手角度: ${pcInput.frontAngleDeg}° ${pcInput.frontAngleDeg >= 30 && pcInput.frontAngleDeg <= 60 ? '(適正:粘)' : '(不適:居着き)'}`, pcInput.frontAngleDeg >= 30 && pcInput.frontAngleDeg <= 60 ? '#00e5ff' : '#ff5252');
+    });
+
+    // PC左クリック or Spaceキー：後手「発（寸勁）」トリガー
+    function triggerPcSunkei(isBigSwing = false) {
+      audio.resume();
+      if (gameState.isGameOver || gameState.isVictory) {
+        resetGame();
+        return;
+      }
+      pcInput.sunkeiTimer = 0.16;
+      pcInput.strokeMode = isBigSwing ? 0.42 : 0.09; // 9cm寸勁 or 42cm大振り
+    }
+
+    // PC右クリック or Q/Eキー：首スリップ（見切り回旋）トリガー
+    function triggerPcSlip() {
+      audio.resume();
+      hmdState.angularSpeed = 4.5; // 閾値を超える首回旋角速度を発生
+      camera.rotation.z = (Math.random() > 0.5 ? 1 : -1) * 0.14;
+      setTimeout(() => { camera.rotation.z = 0; }, 260);
+    }
+
+    window.addEventListener('mousedown', (e) => {
+      if (e.target.tagName === 'BUTTON') return;
+      if (e.button === 0) triggerPcSunkei(e.shiftKey);
+      if (e.button === 2) triggerPcSlip();
+    });
+    window.addEventListener('contextmenu', (e) => e.preventDefault());
+    window.addEventListener('keydown', (e) => {
+      if (e.code === 'Space') triggerPcSunkei(e.shiftKey);
+      if (e.code === 'KeyQ' || e.code === 'KeyE') triggerPcSlip();
+    });
+
+    // =========================================================================
+    // 4. 全5ウェーブ（150秒）レベルデザイン＆敵スポーン定義
+    // =========================================================================
+    const WAVE_DEFINITIONS = [
+      {
+        wave: 1,
+        title: 'WAVE 1: 聴勁の覚醒',
+        sub: '前手（30°〜60°）で触れて0.3倍速「粘」を発動し、短い「寸勁」で撃ち返せ',
+        duration: 25,
+        spawnInterval: 3.2,
+        totalKillsTarget: 7,
+        pattern: (spawnIdx) => {
+          // 前半は斜め25度から単発、後半は正面0度の縦列2体（ビリヤードチュートリアル）
+          if (spawnIdx % 3 === 2) {
+            return [
+              { type: 'Spear', angleDeg: 0, dist: 9.5, speed: 7.5, delay: 0 },
+              { type: 'Spear', angleDeg: 2, dist: 12.0, speed: 7.5, delay: 0.1 }
+            ];
+          }
+          const side = spawnIdx % 2 === 0 ? 22 : -22;
+          return [{ type: 'Spear', angleDeg: side, dist: 9.5, speed: 7.2, delay: 0 }];
+        }
+      },
+      {
+        wave: 2,
+        title: 'WAVE 2: 円弧と借力（ビリヤード連鎖）',
+        sub: '高質量の重撃型（Hammer）を前手で円弧誘導し、待機する敵の群れへ流し込め',
+        duration: 30,
+        spawnInterval: 3.4,
+        totalKillsTarget: 12,
+        pattern: (spawnIdx) => {
+          if (spawnIdx % 2 === 0) {
+            // 正面からHammer＋斜め35度にボーリングのピン状のSpear群
+            const clusterSide = (spawnIdx % 4 === 0) ? 32 : -32;
+            return [
+              { type: 'Hammer', angleDeg: 0, dist: 10.0, speed: 8.8, delay: 0 },
+              { type: 'Spear', angleDeg: clusterSide - 4, dist: 7.5, speed: 4.2, delay: 0 },
+              { type: 'Spear', angleDeg: clusterSide + 4, dist: 8.2, speed: 4.2, delay: 0.1 }
+            ];
+          } else {
+            // 双撃型（Twin）の左右交差突入
+            return [
+              { type: 'Spear', angleDeg: -28, dist: 9.5, speed: 8.5, delay: 0 },
+              { type: 'Spear', angleDeg: 28, dist: 9.5, speed: 8.5, delay: 0.45 }
+            ];
+          }
+        }
+      },
+      {
+        wave: 3,
+        title: 'WAVE 3: 居着きの破壊（首スリップ解禁）',
+        sub: '前手拘束中の高速Viperを「首の回旋（スリップ）」でいなし、0.15倍速ゼロ距離寸勁を叩き込め！',
+        duration: 30,
+        spawnInterval: 3.2,
+        totalKillsTarget: 12,
+        pattern: (spawnIdx) => {
+          if (spawnIdx % 2 === 0) {
+            // 1体目のHammerで前手を拘束した0.4秒後に、顔面へViperが高速突入
+            return [
+              { type: 'Hammer', angleDeg: -24, dist: 9.5, speed: 8.5, delay: 0 },
+              { type: 'Viper', angleDeg: 8, dist: 11.0, speed: 14.5, delay: 0.4 }
+            ];
+          } else {
+            return [
+              { type: 'Viper', angleDeg: -6, dist: 11.5, speed: 14.8, delay: 0 },
+              { type: 'Spear', angleDeg: 20, dist: 9.5, speed: 8.5, delay: 0.5 }
+            ];
+          }
+        }
+      },
+      {
+        wave: 4,
+        title: 'WAVE 4: 多人数掛けの極意（扇状120°包囲）',
+        sub: '波状攻撃を円運動で誘導して同士討ちさせ、すり抜けるViperをスリップで撃ち抜け',
+        duration: 35,
+        spawnInterval: 3.8,
+        totalKillsTarget: 16,
+        pattern: (spawnIdx) => {
+          const dir = spawnIdx % 2 === 0 ? 1 : -1;
+          return [
+            { type: 'Hammer', angleDeg: -42 * dir, dist: 10.5, speed: 9.5, delay: 0 },
+            { type: 'Spear', angleDeg: -15 * dir, dist: 10.0, speed: 9.0, delay: 0.35 },
+            { type: 'Spear', angleDeg: 18 * dir, dist: 10.0, speed: 9.0, delay: 0.7 },
+            { type: 'Viper', angleDeg: 5 * dir, dist: 12.0, speed: 15.5, delay: 1.05 }
+          ];
+        }
+      },
+      {
+        wave: 5,
+        title: 'FINAL WAVE: 百花繚乱・極限化勁',
+        sub: '180°スパイラル連撃を捌き切り、最後に迫る超巨大【BOSS CORE】をスリップ寸勁で粉砕せよ！',
+        duration: 35,
+        spawnInterval: 4.2,
+        totalKillsTarget: 20,
+        pattern: (spawnIdx) => {
+          if (spawnIdx === 0) {
+            // 前半：スパイラル連続突入
+            return [
+              { type: 'Spear', angleDeg: -60, dist: 10.5, speed: 10.0, delay: 0.0 },
+              { type: 'Hammer', angleDeg: -30, dist: 10.5, speed: 10.0, delay: 0.3 },
+              { type: 'Spear', angleDeg: 0, dist: 10.5, speed: 10.0, delay: 0.6 },
+              { type: 'Hammer', angleDeg: 30, dist: 10.5, speed: 10.0, delay: 0.9 },
+              { type: 'Viper', angleDeg: 55, dist: 11.5, speed: 15.5, delay: 1.2 }
+            ];
+          } else {
+            // 後半クライマックス：左右Viper＋正面から超巨大Boss Core
+            return [
+              { type: 'Viper', angleDeg: -12, dist: 12.0, speed: 16.0, delay: 0.0 },
+              { type: 'Boss', angleDeg: 0, dist: 12.5, speed: 9.5, delay: 0.25 },
+              { type: 'Spear', angleDeg: -35, dist: 11.0, speed: 8.0, delay: 0.4 },
+              { type: 'Spear', angleDeg: 35, dist: 11.0, speed: 8.0, delay: 0.4 },
+              { type: 'Spear', angleDeg: -18, dist: 12.5, speed: 8.0, delay: 0.5 },
+              { type: 'Spear', angleDeg: 18, dist: 12.5, speed: 8.0, delay: 0.5 }
+            ];
+          }
+        }
+      }
+    ];
+
+    // =========================================================================
+    // 5. 敵エンティティ＆エフェクト管理
+    // =========================================================================
+    const enemies = [];
+    const particles = [];
+    const shockwaves = [];
+
+    function createEnemyMesh(type) {
+      const group = new THREE.Group();
+      let geo, color, radius, mass;
+
+      if (type === 'Spear') {
+        geo = new THREE.ConeGeometry(0.24, 0.75, 6);
+        geo.rotateX(Math.PI / 2);
+        color = 0x00e5ff;
+        radius = 0.36;
+        mass = 1.0;
+      } else if (type === 'Hammer') {
+        geo = new THREE.OctahedronGeometry(0.42, 0);
+        color = 0xff9100;
+        radius = 0.48;
+        mass = 2.2;
+      } else if (type === 'Viper') {
+        geo = new THREE.ConeGeometry(0.15, 0.95, 4);
+        geo.rotateX(Math.PI / 2);
+        color = 0xff2a85;
+        radius = 0.34;
+        mass = 0.8;
+      } else if (type === 'Boss') {
+        geo = new THREE.DodecahedronGeometry(0.78, 0);
+        color = 0xffd54f;
+        radius = 0.85;
+        mass = 4.0;
+      }
+
+      const mat = new THREE.MeshStandardMaterial({
+        color,
+        emissive: color,
+        emissiveIntensity: 0.5,
+        roughness: 0.2,
+        metalness: 0.8,
+        wireframe: false
+      });
+      const bodyMesh = new THREE.Mesh(geo, mat);
+      group.add(bodyMesh);
+
+      // ワイヤーフレーム外殻
+      const wireMat = new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true, transparent: true, opacity: 0.35 });
+      group.add(new THREE.Mesh(geo, wireMat));
+
+      // 「粘」や「スリップ」で崩れた際に露出する「発（寸勁）の法線ターゲットリング」
+      const ringGeo = new THREE.RingGeometry(radius * 0.55, radius * 0.72, 24);
+      const ringMat = new THREE.MeshBasicMaterial({
+        color: 0xffea00,
+        side: THREE.DoubleSide,
+        transparent: true,
+        opacity: 0.0
+      });
+      const targetRing = new THREE.Mesh(ringGeo, ringMat);
+      targetRing.position.z = radius * 0.6;
+      group.add(targetRing);
+
+      scene.add(group);
+      return { group, bodyMesh, mat, targetRing, ringMat, radius, mass, baseColor: color };
+    }
+
+    function spawnEnemy({ type, angleDeg, dist, speed }) {
+      const visual = createEnemyMesh(type);
+      const rad = THREE.MathUtils.degToRad(angleDeg);
+      const startPos = new THREE.Vector3(
+        Math.sin(rad) * dist,
+        type === 'Viper' ? 1.58 : 1.38, // Viperは顔面（HMD高さ）を正確に狙う
+        -Math.cos(rad) * dist
+      );
+      visual.group.position.copy(startPos);
+
+      const targetPos = new THREE.Vector3(0, type === 'Viper' ? 1.58 : 1.35, 0);
+      const vel = new THREE.Vector3().subVectors(targetPos, startPos).normalize().multiplyScalar(speed);
+      visual.group.lookAt(targetPos);
+
+      enemies.push({
+        type,
+        ...visual,
+        pos: visual.group.position,
+        vel,
+        incomingSpeed: speed,
+        state: 'APPROACHING', // APPROACHING | NEN | SLIPPED | LAUNCHED
+        nenEfficiency: 1.0,
+        nenTimer: 0,
+        chainCount: 0
+      });
+    }
+
+    function spawnBurstParticles(pos, colorHex, count = 18) {
+      for (let i = 0; i < count; i++) {
+        const geo = new THREE.OctahedronGeometry(0.06, 0);
+        const mat = new THREE.MeshBasicMaterial({ color: colorHex, transparent: true, opacity: 1 });
+        const mesh = new THREE.Mesh(geo, mat);
+        mesh.position.copy(pos);
+        scene.add(mesh);
+        const vel = new THREE.Vector3(
+          (Math.random() - 0.5) * 9,
+          (Math.random() - 0.3) * 9,
+          (Math.random() - 0.5) * 9
+        );
+        particles.push({ mesh, mat, vel, life: 0.55 });
+      }
+    }
+
+    function spawnShockwaveRing(pos, dirVec, colorHex = 0xffd54f, maxScale = 3.5) {
+      const geo = new THREE.RingGeometry(0.15, 0.24, 32);
+      const mat = new THREE.MeshBasicMaterial({ color: colorHex, side: THREE.DoubleSide, transparent: true, opacity: 0.95 });
+      const mesh = new THREE.Mesh(geo, mat);
+      mesh.position.copy(pos);
+      const lookTarget = pos.clone().add(dirVec);
+      mesh.lookAt(lookTarget);
+      scene.add(mesh);
+      shockwaves.push({ mesh, mat, scaleSpeed: maxScale * 4.5, life: 0.35 });
+    }
+
+    // =========================================================================
+    // 6. ゲームステート＆UIポップアップ制御
+    // =========================================================================
+    const gameState = {
+      waveIdx: 0,
+      waveTimer: 0,
+      spawnTimer: 0.8,
+      spawnBatchCount: 0,
+      killsInWave: 0,
+      pendingSpawns: [],
+      timeScale: 1.0,
+      dilationTimer: 0,
+      hitStopTimer: 0,
+      score: 0,
+      chain: 0,
+      hp: 3,
+      isGameOver: false,
+      isVictory: false
+    };
+
+    const elWave = document.getElementById('hud-wave');
+    const elTimeScale = document.getElementById('hud-timescale');
+    const elScore = document.getElementById('hud-score');
+    const elChain = document.getElementById('hud-chain');
+    const elHp = document.getElementById('hud-hp');
+    const elBannerTitle = document.getElementById('banner-title');
+    const elBannerSub = document.getElementById('banner-sub');
+    const elJudge = document.getElementById('judge-text');
+    const elVignette = document.getElementById('dilation-vignette');
+
+    let judgeTimeout = null;
+    function showJudgePopup(text, color = '#00e5ff') {
+      elJudge.textContent = text;
+      elJudge.style.color = color;
+      const wDef = WAVE_DEFINITIONS[gameState.waveIdx] || WAVE_DEFINITIONS[0];
+      updateVrHudCanvas(wDef.title, text, color);
+      if (judgeTimeout) clearTimeout(judgeTimeout);
+      judgeTimeout = setTimeout(() => {
+        elJudge.textContent = '';
+      }, 1400);
+    }
+
+    function updateHudDisplay() {
+      elWave.textContent = `${gameState.waveIdx + 1} / 5`;
+      elTimeScale.textContent = `${gameState.timeScale.toFixed(2)}x`;
+      elScore.textContent = gameState.score.toLocaleString();
+      elChain.textContent = gameState.chain;
+      elHp.textContent = '♥'.repeat(Math.max(0, gameState.hp)) + '♡'.repeat(Math.max(0, 3 - gameState.hp));
+
+      if (gameState.timeScale <= 0.16) {
+        elVignette.style.boxShadow = 'inset 0 0 110px rgba(255, 42, 133, 0.65)';
+      } else if (gameState.timeScale <= 0.35) {
+        elVignette.style.boxShadow = 'inset 0 0 90px rgba(0, 229, 255, 0.55)';
+      } else {
+        elVignette.style.boxShadow = 'none';
+      }
+    }
+
+    function startWave(idx) {
+      gameState.waveIdx = THREE.MathUtils.clamp(idx, 0, WAVE_DEFINITIONS.length - 1);
+      gameState.waveTimer = 0;
+      gameState.spawnTimer = 1.0;
+      gameState.spawnBatchCount = 0;
+      gameState.killsInWave = 0;
+      gameState.pendingSpawns = [];
+
+      const wDef = WAVE_DEFINITIONS[gameState.waveIdx];
+      elBannerTitle.textContent = wDef.title;
+      elBannerSub.textContent = wDef.sub;
+      guideGroup.visible = (gameState.waveIdx === 0);
+      updateVrHudCanvas(wDef.title, 'READY', '#00e5ff');
+      updateHudDisplay();
+    }
+
+    function clearAllEnemies() {
+      while (enemies.length > 0) {
+        const e = enemies.pop();
+        scene.remove(e.group);
+      }
+    }
+
+    function resetGame() {
+      clearAllEnemies();
+      gameState.score = 0;
+      gameState.chain = 0;
+      gameState.hp = 3;
+      gameState.timeScale = 1.0;
+      gameState.dilationTimer = 0;
+      gameState.hitStopTimer = 0;
+      gameState.isGameOver = false;
+      gameState.isVictory = false;
+      startWave(0);
+      showJudgePopup('START!', '#00e5ff');
+    }
+
+    document.getElementById('btn-audio').addEventListener('click', () => {
+      audio.resume();
+      showJudgePopup('音響エンジン起動完了', '#00e5ff');
+    });
+    document.getElementById('btn-wave-skip').addEventListener('click', () => {
+      audio.resume();
+      clearAllEnemies();
+      startWave((gameState.waveIdx + 1) % WAVE_DEFINITIONS.length);
+    });
+    document.getElementById('btn-restart').addEventListener('click', () => {
+      audio.resume();
+      resetGame();
+    });
+
+    // =========================================================================
+    // 7. コア物理ループ（粘・発・スリップ・運動量借用・ビリヤード連鎖）
+    // =========================================================================
+    function updateControllersAndHands(rawDt) {
+      const xrCam = renderer.xr.isPresenting ? renderer.xr.getCamera() : camera;
+      xrCam.getWorldPosition(hmdState.pos);
+      const curQuat = new THREE.Quaternion();
+      xrCam.getWorldQuaternion(curQuat);
+
+      // HMDの回旋角速度を算出（スリッピング判定）
+      const angleDiff = 2 * Math.acos(Math.min(1, Math.abs(curQuat.dot(hmdState.prevQuat))));
+      const computedAngVel = rawDt > 0 ? angleDiff / rawDt : 0;
+      hmdState.angularSpeed = Math.max(computedAngVel, hmdState.angularSpeed * 0.85);
+      hmdState.prevQuat.copy(curQuat);
+      if (hmdState.slipCooldown > 0) hmdState.slipCooldown -= rawDt;
+
+      if (renderer.xr.isPresenting) {
+        // VRモード：左右コントローラーのワールド座標と法線を取得
+        controller0.getWorldPosition(leftHand.pos);
+        controller0.getWorldQuaternion(leftHand.mesh.quaternion);
+        leftHand.normal.set(0, 0, -1).applyQuaternion(leftHand.mesh.quaternion).normalize();
+
+        controller1.getWorldPosition(rightHand.pos);
+        controller1.getWorldQuaternion(rightHand.mesh.quaternion);
+        rightHand.normal.set(0, 0, -1).applyQuaternion(rightHand.mesh.quaternion).normalize();
+      } else {
+        // PCモード：マウスで前手（円弧誘導）、クリック/Spaceで後手（寸勁突き）をシミュレート
+        const targetX = pcInput.mouseX * 0.85;
+        const targetY = THREE.MathUtils.clamp(1.35 + pcInput.mouseY * 0.45, 0.9, 1.85);
+        leftHand.pos.lerp(new THREE.Vector3(targetX, targetY, -0.62), 0.35);
+
+        const rad = THREE.MathUtils.degToRad(pcInput.frontAngleDeg);
+        leftHand.mesh.rotation.set(0, -rad, 0);
+        leftHand.normal.set(Math.sin(rad), 0, -Math.cos(rad)).normalize();
+
+        if (pcInput.sunkeiTimer > 0) {
+          pcInput.sunkeiTimer -= rawDt;
+          rightHand.pos.lerp(new THREE.Vector3(targetX, targetY, -0.66), 0.65);
+          rightHand.currentStrokeDist = pcInput.strokeMode;
+          rightHand.peakAccel = pcInput.strokeMode <= 0.16 ? 38.0 : 18.0;
+        } else {
+          rightHand.pos.lerp(new THREE.Vector3(targetX + 0.18, targetY - 0.08, -0.32), 0.25);
+        }
+        rightHand.normal.set(pcInput.mouseX * 0.35, pcInput.mouseY * 0.15, -1).normalize();
+      }
+
+      leftHand.update(rawDt);
+      rightHand.update(rawDt);
+
+      // 体幹（HMD）からより前方（敵側）に出ている手を「前手（粘）」、手前にある手を「後手（発）」として動的割り当て
+      const leftDistZ = Math.abs(leftHand.pos.z - hmdState.pos.z);
+      const rightDistZ = Math.abs(rightHand.pos.z - hmdState.pos.z);
+      if (leftDistZ >= rightDistZ - 0.05) {
+        return { frontHand: leftHand, rearHand: rightHand };
+      } else {
+        return { frontHand: rightHand, rearHand: leftHand };
+      }
+    }
+
+    function executeSunkeiLaunch(enemy, rearHand, frontHand) {
+      // 寸勁のストローク距離減衰判定：15cm以内なら減衰なし（1.0）、大振り（>25cm）は指数減衰
+      const strokeDist = Math.max(0.05, rearHand.currentStrokeDist || 0.09);
+      const strokePenalty = Math.exp(-Math.max(0, strokeDist - 0.15) / 0.12);
+      const peakAccel = Math.max(24.0, rearHand.peakAccel || 32.0);
+
+      // 大振りペナルティ（ストローク28cm超で居着き弾かれ）
+      if (strokeDist > 0.28 && enemy.state !== 'SLIPPED') {
+        audio.playClashPenalty();
+        rearHand.pulseHaptics(0.9, 120);
+        showJudgePopup(`居着き（大振り減衰 ${(strokeDist * 100).toFixed(0)}cm）!`, '#ff5252');
+        enemy.vel.multiplyScalar(-0.35);
+        enemy.state = 'APPROACHING';
+        return;
+      }
+
+      const isCritical = strokeDist <= 0.15;
+      const slipBonus = enemy.state === 'SLIPPED' ? 1.35 : 1.0;
+
+      // 運動量借用（Vector Counter）：敵の突進初速 × 粘維持率 をそのまま射出速度に加算
+      const borrowedMomentum = enemy.incomingSpeed * enemy.nenEfficiency * 0.9;
+      const launchSpeed = (peakAccel * 0.45 * strokePenalty + borrowedMomentum) * slipBonus;
+
+      // 射出方向ベクトル：前手の位置や後手の法線ベクトルを合成し、近くの別敵へ磁力補正（ビリヤード補助）
+      const aimDir = rearHand.normal.clone();
+      aimDir.z = Math.min(-0.5, aimDir.z);
+      aimDir.normalize();
+
+      // 前方扇状にいる別の敵がいれば、円弧誘導方向にいる敵へ緩やかにホーミング補正（多人数掛けの爽快感向上）
+      let bestTarget = null;
+      let bestDot = 0.72;
+      for (const other of enemies) {
+        if (other === enemy || other.state === 'LAUNCHED') continue;
+        const toOther = new THREE.Vector3().subVectors(other.pos, enemy.pos).normalize();
+        const dot = aimDir.dot(toOther);
+        if (dot > bestDot) {
+          bestDot = dot;
+          bestTarget = toOther;
+        }
+      }
+      if (bestTarget) {
+        aimDir.lerp(bestTarget, 0.65).normalize();
+      }
+
+      enemy.vel.copy(aimDir).multiplyScalar(Math.max(18.0, launchSpeed));
+      enemy.state = 'LAUNCHED';
+      enemy.ringMat.opacity = 0;
+      enemy.mat.color.setHex(isCritical ? 0xffea00 : 0x00ffcc);
+      enemy.mat.emissive.setHex(isCritical ? 0xffea00 : 0x00ffcc);
+
+      // Wave 5 Boss Core 撃破時は 0.6秒の完全ヒットストップ＋全方位逆噴射フィナーレ
+      if (enemy.type === 'Boss') {
+        gameState.hitStopTimer = 0.6;
+        audio.playSunkeiImpact(true);
+        rearHand.pulseHaptics(1.0, 350);
+        frontHand.pulseHaptics(1.0, 350);
+        spawnShockwaveRing(enemy.pos, aimDir, 0xffd54f, 8.0);
+        spawnBurstParticles(enemy.pos, 0xffd54f, 45);
+        showJudgePopup('極限浸透勁！！ BOSS CORE 逆噴射粉砕！', '#ffd54f');
+        return;
+      }
+
+      audio.playSunkeiImpact(isCritical);
+      rearHand.pulseHaptics(isCritical ? 1.0 : 0.65, isCritical ? 90 : 50);
+      spawnShockwaveRing(enemy.pos, aimDir, isCritical ? 0xffea00 : 0x00e5ff, isCritical ? 3.8 : 2.2);
+
+      gameState.timeScale = 1.0;
+      gameState.dilationTimer = 0;
+      gameState.score += isCritical ? 300 : 150;
+
+      if (isCritical) {
+        showJudgePopup(`極・寸勁 CRITICAL! (${(strokeDist * 100).toFixed(0)}cm / ${launchSpeed.toFixed(1)}m/s)`, '#ffd54f');
+      } else {
+        showJudgePopup(`発 COUNTER! (${launchSpeed.toFixed(1)}m/s)`, '#00e5ff');
+      }
+      updateHudDisplay();
+    }
+
+    // =========================================================================
+    // 8. メインゲームループ（60〜90Hz WebXR対応）
+    // =========================================================================
+    const clock = new THREE.Clock();
+
+    function animate() {
+      const rawDt = Math.min(clock.getDelta(), 0.05);
+
+      // ヒットストップ処理（Wave 5 Boss Core インパクト時）
+      if (gameState.hitStopTimer > 0) {
+        gameState.hitStopTimer -= rawDt;
+        if (gameState.hitStopTimer <= 0) {
+          // ヒットストップ解除と同時に残存敵を全て連鎖大爆発させて完全勝利
+          enemies.forEach((e) => {
+            spawnBurstParticles(e.pos, 0xffd54f, 24);
+            scene.remove(e.group);
+          });
+          enemies.length = 0;
+          audio.playChainHarmony(8);
+          gameState.score += 5000;
+          gameState.isVictory = true;
+          elBannerTitle.textContent = 'MASTER OF KAKEI - 完全制覇';
+          elBannerSub.textContent = `最終スコア: ${gameState.score.toLocaleString()} / トリガーまたは「即リトライ」で再挑戦`;
+          showJudgePopup('全5ウェーブ完全制覇！！', '#ffd54f');
+          updateHudDisplay();
+        }
+        renderer.render(scene, camera);
+        return;
+      }
+
+      const { frontHand, rearHand } = updateControllersAndHands(rawDt);
+
+      // タイムディレーション減衰管理
+      if (gameState.dilationTimer > 0) {
+        gameState.dilationTimer -= rawDt;
+        if (gameState.dilationTimer <= 0) {
+          gameState.timeScale = 1.0;
+          updateHudDisplay();
+        }
+      }
+
+      const scaledDt = rawDt * gameState.timeScale;
+      audio.updateTimeScaleAudio(gameState.timeScale, rawDt);
+
+      // Wave進行＆スポーン管理
+      if (!gameState.isGameOver && !gameState.isVictory) {
+        const wDef = WAVE_DEFINITIONS[gameState.waveIdx];
+        gameState.waveTimer += scaledDt;
+        gameState.spawnTimer -= scaledDt;
+
+        if (gameState.spawnTimer <= 0) {
+          const batch = wDef.pattern(gameState.spawnBatchCount++);
+          batch.forEach((item) => {
+            gameState.pendingSpawns.push({ ...item, timer: item.delay });
+          });
+          gameState.spawnTimer = wDef.spawnInterval;
+        }
+
+        for (let i = gameState.pendingSpawns.length - 1; i >= 0; i--) {
+          const p = gameState.pendingSpawns[i];
+          p.timer -= scaledDt;
+          if (p.timer <= 0) {
+            spawnEnemy(p);
+            gameState.pendingSpawns.splice(i, 1);
+          }
+        }
+
+        // ウェーブクリア判定
+        if (gameState.killsInWave >= wDef.totalKillsTarget && enemies.length === 0 && gameState.pendingSpawns.length === 0) {
+          if (gameState.waveIdx < WAVE_DEFINITIONS.length - 1) {
+            audio.playChainHarmony(5);
+            startWave(gameState.waveIdx + 1);
+            showJudgePopup(`WAVE ${gameState.waveIdx + 1} START!`, '#00ffcc');
+          } else {
+            gameState.isVictory = true;
+            elBannerTitle.textContent = 'MASTER OF KAKEI - 完全制覇';
+            elBannerSub.textContent = `最終スコア: ${gameState.score.toLocaleString()} / トリガーまたは「即リトライ」で再挑戦`;
+          }
+        }
+      }
+
+      // 敵の移動・接触判定・ビリヤード連鎖更新
       for (let i = enemies.length - 1; i >= 0; i--) {
         const e = enemies[i];
 
-        if (e.userData.state === 'APPROACHING') {
-          // プレイヤーの頭部に向かって直進
-          const targetPos = new THREE.Vector3(camera.position.x, 1.4, camera.position.z);
-          const dir = new THREE.Vector3().subVectors(targetPos, e.position).normalize();
-          e.position.addScaledVector(dir, e.userData.speed * delta);
-          e.lookAt(targetPos);
+        if (e.state === 'APPROACHING') {
+          e.pos.addScaledVector(e.vel, scaledDt);
+          e.bodyMesh.rotation.z += 2.5 * scaledDt;
 
-          const distToHead = e.position.distanceTo(camera.position);
+          // 1) 前手「粘（Nen）」接触判定
+          const distToFront = e.pos.distanceTo(frontHand.pos);
+          if (distToFront < e.radius + 0.26 && e.type !== 'Viper') {
+            // 敵進行ベクトルと前手法線の角度計算
+            const inDir = e.vel.clone().normalize().negate();
+            const dot = THREE.MathUtils.clamp(inDir.dot(frontHand.normal), -1, 1);
+            const contactAngleDeg = THREE.MathUtils.radToDeg(Math.acos(dot));
 
-          // 1. 手による「粘（前手接触）」判定
-          controllers.forEach((ctrl, idx) => {
-            const distToHand = e.position.distanceTo(ctrl.position);
-            if (distToHand < 0.35 && state === 'NORMAL') {
-              // 粘の成立
-              state = 'NEN';
-              timeDilation = 0.3;
-              slowTimer = 0.6; // 0.6秒以内に後手を打つ
-              boundEnemy = e;
-              boundHandIndex = idx;
-              e.userData.state = 'BOUND';
-              playSound('nen');
-              triggerHaptic(idx, 0.4, 60);
-            }
-          });
-
-          // 2. ゴーグル（HMD）スリッピングアウェイ判定
-          if (distToHead < 0.45 && state === 'NORMAL') {
-            if (headYawVelocity > 2.5) { // 素早く首を振った
-              state = 'SLIP';
-              timeDilation = 0.15; // 超スロー
-              slowTimer = 0.45;
-              boundEnemy = e;
-              boundHandIndex = -1; // どちらの手でも発が可能
-              e.userData.state = 'BOUND';
-              playSound('slip');
-            } else if (distToHead < 0.25) { // スリップ失敗：直撃被弾
-              hp--;
-              playSound('hit');
-              scene.remove(e);
-              enemies.splice(i, 1);
-              continue;
+            // 適正角度（30°〜60°、実践許容22°〜68°）なら「粘」発動
+            if (contactAngleDeg >= 22 && contactAngleDeg <= 68) {
+              e.state = 'NEN';
+              e.nenTimer = 1.8;
+              e.nenEfficiency = 1.0 - Math.abs(45 - contactAngleDeg) / 45;
+              e.ringMat.opacity = 0.95;
+              gameState.timeScale = 0.30;
+              gameState.dilationTimer = 1.8;
+              audio.playNenAttach();
+              frontHand.pulseHaptics(0.25, 45); // 滑らかな微細パルス
+              showJudgePopup(`粘 NEN 吸着! (${contactAngleDeg.toFixed(0)}° / 0.30x)`, '#00e5ff');
+              updateHudDisplay();
+            } else {
+              // 角度不一致（正面衝突居着き）
+              audio.playClashPenalty();
+              frontHand.pulseHaptics(0.85, 100);
+              showJudgePopup(`角度不適 居着き! (${contactAngleDeg.toFixed(0)}°)`, '#ff5252');
+              e.vel.multiplyScalar(0.5);
             }
           }
 
-        } else if (e.userData.state === 'BOUND') {
-          // 前手で吸着中：前手の横に引き込まれるように追従
-          if (boundHandIndex !== -1) {
-            const leadCtrl = controllers[boundHandIndex];
-            e.position.lerp(leadCtrl.position, 0.1);
-          }
-
-          // 「発（後手によるショートストローク）」の判定
-          controllers.forEach((ctrl, idx) => {
-            // スリップ時はいずれの手でもOK、粘時は逆の手（後手）のみ
-            if (boundHandIndex === -1 || idx !== boundHandIndex) {
-              const distToHand = e.position.distanceTo(ctrl.position);
-              const punchSpeed = ctrl.userData.vel.length();
-
-              if (distToHand < 0.4 && punchSpeed > 1.2) { // コンパクトな鋭い突き
-                // 発の成立：突き出したベクトルの方向へ射出
-                const shootDir = ctrl.userData.vel.clone().normalize();
-                e.userData.vel.copy(shootDir).multiplyScalar(14.0);
-                e.userData.state = 'DEFLECTED';
-                playSound('hatsu');
-                triggerHaptic(idx, 1.0, 40);
-
-                // スロー解除
-                state = 'NORMAL';
-                timeDilation = 1.0;
-                boundEnemy = null;
-                score += (state === 'SLIP' ? 300 : 100);
-              }
-            }
-          });
-
-        } else if (e.userData.state === 'DEFLECTED') {
-          // 射出後の高速移動
-          e.position.addScaledVector(e.userData.vel, rawDelta);
-
-          // 左右の壁に激突したら撃破
-          if (Math.abs(e.position.x) > 3.8 || e.position.z < -6) {
-            e.userData.state = 'CRASHED';
-            playSound('hit');
-            scene.remove(e);
-            enemies.splice(i, 1);
-            continue;
-          }
-        }
-      }
-
-      renderer.render(scene, camera);
-    });
-  </script>
-</body>
-</html>
+          // 2) 頭部見切り「スリッピング（Slip）」判定（顔面直撃寸前の首回旋）
+          const distToHead = e.pos.distanceTo(hmdState.pos);
+          if (distToHead < 1.15 && distToHead > 0.25 && hmdState.angularSpeed > 1.35 && hmdState.slipCooldown <= 0) {
+            e.state = 'SLIPPED';
+            e.nenTimer = 2.1;
+            e.nenEfficiency = 1.25;
+            e.ringMat.opacity = 1.0;
+            // 目の前の側面
