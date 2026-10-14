@@ -1,1424 +1,773 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
-  <title>KAKEI（化勁）: Vector Counter - WebXR Martial Arts Action</title>
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
-    body {
-      background: #05070c;
-      color: #e2f1ff;
-      font-family: 'Segoe UI', 'Hiragino Kaku Gothic ProN', 'Meiryo', sans-serif;
-      overflow: hidden;
-      width: 100vw;
-      height: 100vh;
-    }
-    #overlay {
-      position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
-      pointer-events: none;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      padding: 20px 28px;
-      z-index: 10;
-    }
-    .top-bar {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      gap: 16px;
-    }
-    .brand-box {
-      background: rgba(8, 16, 32, 0.78);
-      border: 1px solid rgba(0, 229, 255, 0.4);
-      border-left: 4px solid #00e5ff;
-      padding: 12px 18px;
-      border-radius: 8px;
-      backdrop-filter: blur(8px);
-      pointer-events: auto;
-    }
-    .brand-title {
-      font-size: 20px;
-      font-weight: 800;
-      letter-spacing: 0.08em;
-      color: #00e5ff;
-      text-shadow: 0 0 12px rgba(0, 229, 255, 0.5);
-    }
-    .brand-sub {
-      font-size: 12px;
-      color: #9ab8d4;
-      margin-top: 4px;
-    }
-    .hud-stats {
-      display: flex;
-      gap: 14px;
-      background: rgba(8, 16, 32, 0.78);
-      border: 1px solid rgba(255, 255, 255, 0.18);
-      padding: 10px 18px;
-      border-radius: 8px;
-      backdrop-filter: blur(8px);
-    }
-    .stat-item {
-      text-align: center;
-      min-width: 72px;
-    }
-    .stat-label {
-      font-size: 10px;
-      text-transform: uppercase;
-      letter-spacing: 0.1em;
-      color: #7f9eb8;
-    }
-    .stat-val {
-      font-size: 22px;
-      font-weight: 800;
-      color: #ffffff;
-      margin-top: 2px;
-    }
-    .stat-val.cyan { color: #00e5ff; }
-    .stat-val.gold { color: #ffd54f; }
-    .stat-val.hp { color: #ff5252; letter-spacing: 3px; }
-    #center-banner {
-      align-self: center;
-      text-align: center;
-      transition: all 0.2s ease;
-    }
-    .wave-announce {
-      font-size: 28px;
-      font-weight: 900;
-      letter-spacing: 0.12em;
-      color: #ffffff;
-      text-shadow: 0 0 20px rgba(0, 229, 255, 0.8);
-      margin-bottom: 6px;
-    }
-    .wave-sub {
-      font-size: 14px;
-      color: #80deea;
-      background: rgba(0, 30, 50, 0.7);
-      padding: 4px 14px;
-      border-radius: 20px;
-      display: inline-block;
-      border: 1px solid rgba(0, 229, 255, 0.35);
-    }
-    .judge-popup {
-      margin-top: 12px;
-      font-size: 24px;
-      font-weight: 900;
-      letter-spacing: 0.08em;
-      min-height: 36px;
-      text-shadow: 0 0 16px currentColor;
-    }
-    .bottom-bar {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-end;
-      gap: 16px;
-    }
-    .controls-card {
-      background: rgba(8, 16, 32, 0.82);
-      border: 1px solid rgba(255, 255, 255, 0.15);
-      padding: 12px 16px;
-      border-radius: 8px;
-      font-size: 12px;
-      line-height: 1.65;
-      color: #bdd6ee;
-      max-width: 560px;
-      pointer-events: auto;
-    }
-    .controls-card b { color: #00e5ff; }
-    .controls-card .gold { color: #ffd54f; font-weight: 700; }
-    .controls-card .mag { color: #ff69b4; font-weight: 700; }
-    .btn-group {
-      display: flex;
-      gap: 10px;
-      pointer-events: auto;
-    }
-    .ui-btn {
-      background: linear-gradient(135deg, #00b4d8, #0077b6);
-      color: #fff;
-      border: 1px solid #90e0ef;
-      padding: 10px 18px;
-      border-radius: 6px;
-      font-size: 13px;
-      font-weight: 700;
-      cursor: pointer;
-      letter-spacing: 0.05em;
-      box-shadow: 0 4px 14px rgba(0, 180, 216, 0.4);
-      transition: transform 0.1s, background 0.2s;
-    }
-    .ui-btn:hover { transform: translateY(-1px); background: linear-gradient(135deg, #00e5ff, #0096c7); }
-    .ui-btn:active { transform: translateY(1px); }
-    #dilation-vignette {
-      position: fixed;
-      inset: 0;
-      pointer-events: none;
-      z-index: 5;
-      transition: box-shadow 0.15s ease, backdrop-filter 0.15s ease;
-    }
-  </style>
-  <script type="importmap">
-    {
-      "imports": {
-        "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
-        "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
-      }
-    }
-  </script>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+<title>KAKEI: VECTOR COUNTER</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+  body {
+    background: #020306;
+    color: #f0f8ff;
+    font-family: 'Futura', 'Trebuchet MS', 'Hiragino Kaku Gothic ProN', sans-serif;
+    overflow: hidden;
+    width: 100vw;
+    height: 100vh;
+  }
+  #hud {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 28px 36px;
+    z-index: 10;
+  }
+  .top-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+  }
+  .brand {
+    letter-spacing: 0.25em;
+    font-size: 14px;
+    font-weight: 700;
+    color: rgba(0, 240, 255, 0.85);
+    border-left: 2px solid #00f0ff;
+    padding-left: 12px;
+  }
+  .brand span {
+    display: block;
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    color: rgba(255, 255, 255, 0.45);
+    margin-top: 3px;
+  }
+  .stats {
+    display: flex;
+    gap: 28px;
+    align-items: baseline;
+  }
+  .st-block { text-align: right; }
+  .st-lbl {
+    font-size: 9px;
+    letter-spacing: 0.22em;
+    color: rgba(255, 255, 255, 0.4);
+  }
+  .st-val {
+    font-size: 24px;
+    font-weight: 300;
+    letter-spacing: 0.08em;
+    color: #fff;
+  }
+  .st-val.accent { color: #00f0ff; }
+  .st-val.hp { color: #ff2a6d; letter-spacing: 4px; font-size: 20px; }
+
+  #center-area {
+    align-self: center;
+    text-align: center;
+    pointer-events: auto;
+  }
+  #w-title {
+    font-size: 22px;
+    font-weight: 300;
+    letter-spacing: 0.35em;
+    color: #fff;
+    text-transform: uppercase;
+  }
+  #w-sub {
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    color: rgba(0, 240, 255, 0.7);
+    margin-top: 6px;
+  }
+  #judge {
+    margin-top: 14px;
+    font-size: 28px;
+    font-weight: 800;
+    letter-spacing: 0.18em;
+    min-height: 40px;
+    text-shadow: 0 0 18px currentColor;
+    transition: transform 0.08s ease;
+  }
+  #vr-btn {
+    margin-top: 18px;
+    padding: 12px 34px;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.25em;
+    color: #020306;
+    background: #00f0ff;
+    border: none;
+    border-radius: 2px;
+    cursor: pointer;
+    box-shadow: 0 0 24px rgba(0, 240, 255, 0.5);
+    transition: all 0.15s;
+  }
+  #vr-btn:hover { background: #fff; box-shadow: 0 0 32px rgba(255, 255, 255, 0.8); }
+
+  .bottom-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+  }
+  .hint {
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    color: rgba(255, 255, 255, 0.4);
+    line-height: 1.7;
+  }
+  .hint b { color: rgba(0, 240, 255, 0.85); font-weight: 600; }
+  .btns { display: flex; gap: 10px; pointer-events: auto; }
+  .mini-btn {
+    background: transparent;
+    color: rgba(255, 255, 255, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    padding: 7px 14px;
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .mini-btn:hover { border-color: #00f0ff; color: #00f0ff; }
+  #flash {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 4;
+    transition: box-shadow 0.1s ease;
+  }
+</style>
+<script type="importmap">
+  { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
+</script>
 </head>
 <body>
-  <div id="dilation-vignette"></div>
-
-  <div id="overlay">
-    <div class="top-bar">
-      <div class="brand-box">
-        <div class="brand-title">KAKEI（化勁）: VECTOR COUNTER</div>
-        <div class="brand-sub">前手「粘(0.3x)」円弧誘導 → 後手「発(寸勁)」運動量借用 ／ 首「スリップ(0.15x)」見切り反撃</div>
-      </div>
-
-      <div class="hud-stats">
-        <div class="stat-item">
-          <div class="stat-label">WAVE</div>
-          <div class="stat-val cyan" id="hud-wave">1 / 5</div>
-        </div>
-        <div class="stat-item">
-          <div class="stat-label">TIME SCALE</div>
-          <div class="stat-val gold" id="hud-timescale">1.00x</div>
-        </div>
-        <div class="stat-item">
-          <div class="stat-label">SCORE</div>
-          <div class="stat-val" id="hud-score">0</div>
-        </div>
-        <div class="stat-item">
-          <div class="stat-label">CHAIN</div>
-          <div class="stat-val cyan" id="hud-chain">0</div>
-        </div>
-        <div class="stat-item">
-          <div class="stat-label">HP</div>
-          <div class="stat-val hp" id="hud-hp">♥♥♥</div>
-        </div>
-      </div>
+<div id="flash"></div>
+<div id="hud">
+  <div class="top-row">
+    <div class="brand">
+      KAKEI // VECTOR COUNTER
+      <span>PARRY (0.45s) &rarr; SUNKEI IMPULSE</span>
     </div>
-
-    <div id="center-banner">
-      <div class="wave-announce" id="banner-title">WAVE 1: 聴勁の覚醒</div>
-      <div class="wave-sub" id="banner-sub">前手（30°〜60°）で触れて減速・円弧誘導し、短いストロークの「寸勁」で撃ち返せ</div>
-      <div class="judge-popup" id="judge-text"></div>
-    </div>
-
-    <div class="bottom-bar">
-      <div class="controls-card">
-        <div><b>【Meta Quest 3 / 3S (VRモード)】</b> 画面下部の <b>ENTER VR</b> を押して即起動。</div>
-        <div>・<b>前手「粘」</b>: 体幹から前に出した手で敵に30°〜60°で触れると<b>0.3倍速</b>。円弧を描いて後続の敵へ誘導。</div>
-        <div>・<span class="gold">後手「発（寸勁）」</span>: 15cm以内の短いストロークで鋭く突くと最大火力＆貫通ビリヤード連鎖（大振りは威力減衰）。</div>
-        <div>・<span class="mag">首「スリップ」</span>: 顔面直撃寸前に頭を素早く傾ける/回すと<b>0.15倍速</b>発動！「粘」省略でゼロ距離寸勁を叩き込める。</div>
-        <div style="margin-top:4px; color:#8fb8de;"><b>【PCテスト操作】</b> マウス移動：前手（円弧誘導）／ <b>左クリックまたはSpace</b>：後手「寸勁」／ <b>ホイール</b>：前手角度調整 ／ <b>Q・Eキーまたは右クリック</b>：首スリップ</div>
-      </div>
-
-      <div class="btn-group">
-        <button class="ui-btn" id="btn-audio">🔊 音響エンジン起動</button>
-        <button class="ui-btn" id="btn-wave-skip">⏭ 次のWaveへ</button>
-        <button class="ui-btn" id="btn-restart">🔄 即リトライ</button>
-      </div>
+    <div class="stats">
+      <div class="st-block"><div class="st-lbl">WAVE</div><div class="st-val accent" id="ui-wave">01</div></div>
+      <div class="st-block"><div class="st-lbl">SCORE</div><div class="st-val" id="ui-score">0000</div></div>
+      <div class="st-block"><div class="st-lbl">CHAIN</div><div class="st-val accent" id="ui-chain">0</div></div>
+      <div class="st-block"><div class="st-lbl">LIFE</div><div class="st-val hp" id="ui-hp">///</div></div>
     </div>
   </div>
 
-  <script type="module">
-    import * as THREE from 'three';
-    import { VRButton } from 'three/addons/webxr/VRButton.js';
+  <div id="center-area">
+    <div id="w-title">WAVE 01 // 聴勁の覚醒</div>
+    <div id="w-sub">引きつけて前手で弾き（タッ！）、0.45秒以内に後手の寸勁で撃ち抜け（タン！）</div>
+    <div id="judge"></div>
+    <button id="vr-btn">ENTER VR MODE</button>
+  </div>
 
-    // =========================================================================
-    // 1. Web Audio API プロシージャル音響＆聴勁フィードバック・エンジン
-    // =========================================================================
-    class KakeiAudioEngine {
-      constructor() {
-        this.ctx = null;
-        this.masterGain = null;
-        this.bgmFilter = null;
-        this.bgmGain = null;
-        this.isInitialized = false;
-        this.heartbeatTimer = 0;
-        // ペンタトニック音階 (C4, D4, E4, G4, A4, C5, D5, E5, G5, A5, C6)
-        this.pentatonic = [261.63, 293.66, 329.63, 392.00, 440.00, 523.25, 587.33, 659.25, 783.99, 880.00, 1046.50];
-      }
+  <div class="bottom-row">
+    <div class="hint">
+      <b>VR</b> : 前手(30°〜60°)でパリィ受け流し &rarr; 収縮リングに合わせて後手15cm寸勁 ／ 顔面直撃は首を傾けてスリップ<br>
+      <b>PC</b> : マウス移動(前手) ／ ホイール(角度) ／ 左クリック・Space(寸勁) ／ 右クリック・Q/E(スリップ)
+    </div>
+    <div class="btns">
+      <button class="mini-btn" id="btn-skip">NEXT WAVE</button>
+      <button class="mini-btn" id="btn-retry">RESET</button>
+    </div>
+  </div>
+</div>
 
-      init() {
-        if (this.isInitialized) return;
-        const AudioCtx = window.AudioContext || window.webkitAudioContext;
-        this.ctx = new AudioCtx();
-        this.masterGain = this.ctx.createGain();
-        this.masterGain.gain.value = 0.7;
-        this.masterGain.connect(this.ctx.destination);
+<script type="module">
+import * as THREE from 'three';
 
-        // 環境ドローンBGM（ローパスフィルター直結で「粘」の水没静寂を表現）
-        this.bgmFilter = this.ctx.createBiquadFilter();
-        this.bgmFilter.type = 'lowpass';
-        this.bgmFilter.frequency.value = 1400;
-        this.bgmFilter.Q.value = 4.0;
+// =========================================================================
+// 1. クリーン音響エンジン（常時ノイズ完全廃止・透明なクリスタル＆重低音のみ）
+// =========================================================================
+class CleanSoundEngine {
+  constructor() {
+    this.ctx = null;
+    // 透明感のあるクリスタルペンタトニック (D4, F4, G4, A4, C5, D5, F5, G5, A5, C6, D6)
+    this.scale = [293.66, 349.23, 392.00, 440.00, 523.25, 587.33, 698.46, 783.99, 880.00, 1046.50, 1174.66];
+  }
+  init() {
+    if (!this.ctx) {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      this.ctx = new AC();
+      this.master = this.ctx.createGain();
+      this.master.gain.value = 0.65;
+      this.master.connect(this.ctx.destination);
+    }
+    if (this.ctx.state === 'suspended') this.ctx.resume();
+  }
+  // 刀の鍔鳴り・クリスタルパリィ音（澄んだFMベル）
+  parry(isJust = false) {
+    this.init();
+    const t = this.ctx.currentTime;
+    const base = isJust ? 1174.66 : 880.0;
+    [base, base * 1.498, base * 2.0].forEach((f, i) => {
+      const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+      o.type = 'sine';
+      o.frequency.setValueAtTime(f, t);
+      o.frequency.exponentialRampToValueAtTime(f * 0.96, t + 0.18);
+      g.gain.setValueAtTime((isJust ? 0.28 : 0.18) / (i + 1), t);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + (isJust ? 0.25 : 0.16));
+      o.connect(g); g.connect(this.master);
+      o.start(t); o.stop(t + 0.26);
+    });
+  }
+  // 寸勁インパクト（キレのあるタイトなサブベース＋高域アタック）
+  sunkei(isCrit = true) {
+    this.init();
+    const t = this.ctx.currentTime;
+    const sub = this.ctx.createOscillator(), sg = this.ctx.createGain();
+    sub.type = 'sine';
+    sub.frequency.setValueAtTime(isCrit ? 160 : 120, t);
+    sub.frequency.exponentialRampToValueAtTime(28, t + 0.22);
+    sg.gain.setValueAtTime(isCrit ? 0.9 : 0.55, t);
+    sg.gain.exponentialRampToValueAtTime(0.0001, t + 0.24);
+    sub.connect(sg); sg.connect(this.master);
+    sub.start(t); sub.stop(t + 0.25);
 
-        this.bgmGain = this.ctx.createGain();
-        this.bgmGain.gain.value = 0.16;
+    if (isCrit) {
+      const hi = this.ctx.createOscillator(), hg = this.ctx.createGain();
+      hi.type = 'triangle';
+      hi.frequency.setValueAtTime(1760, t);
+      hi.frequency.exponentialRampToValueAtTime(587.33, t + 0.12);
+      hg.gain.setValueAtTime(0.25, t);
+      hg.gain.exponentialRampToValueAtTime(0.0001, t + 0.13);
+      hi.connect(hg); hg.connect(this.master);
+      hi.start(t); hi.stop(t + 0.14);
+    }
+  }
+  // 首スリップ（シュッという風切り＋鼓動）
+  slip() {
+    this.init();
+    const t = this.ctx.currentTime;
+    const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+    o.type = 'sine';
+    o.frequency.setValueAtTime(520, t);
+    o.frequency.exponentialRampToValueAtTime(90, t + 0.22);
+    g.gain.setValueAtTime(0.4, t);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.24);
+    o.connect(g); g.connect(this.master);
+    o.start(t); o.stop(t + 0.25);
+  }
+  // 居着き・角度ミス時の短いクリック音（不快なブザー音を廃止）
+  guardBreak() {
+    this.init();
+    const t = this.ctx.currentTime;
+    const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+    o.type = 'triangle';
+    o.frequency.setValueAtTime(190, t);
+    o.frequency.linearRampToValueAtTime(75, t + 0.09);
+    g.gain.setValueAtTime(0.35, t);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.1);
+    o.connect(g); g.connect(this.master);
+    o.start(t); o.stop(t + 0.11);
+  }
+  // ビリヤード連鎖の透明な和音チャイム
+  chain(idx) {
+    this.init();
+    const t = this.ctx.currentTime;
+    const f = this.scale[Math.min(idx, this.scale.length - 1)];
+    [f, f * 1.5].forEach((freq, i) => {
+      const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+      o.type = 'sine';
+      o.frequency.setValueAtTime(freq, t);
+      g.gain.setValueAtTime(i === 0 ? 0.3 : 0.12, t);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.35);
+      o.connect(g); g.connect(this.master);
+      o.start(t); o.stop(t + 0.36);
+    });
+  }
+}
+const sfx = new CleanSoundEngine();
 
-        const osc1 = this.ctx.createOscillator();
-        const osc2 = this.ctx.createOscillator();
-        osc1.type = 'sawtooth';
-        osc2.type = 'triangle';
-        osc1.frequency.value = 55.0; // A1
-        osc2.frequency.value = 82.41; // E2
-        osc1.connect(this.bgmFilter);
-        osc2.connect(this.bgmFilter);
-        this.bgmFilter.connect(this.bgmGain);
-        this.bgmGain.connect(this.masterGain);
-        osc1.start();
-        osc2.start();
+// =========================================================================
+// 2. Three.js シャープ＆ハイコントラスト空間構築
+// =========================================================================
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x020306);
+scene.fog = new THREE.FogExp2(0x020306, 0.032);
 
-        this.isInitialized = true;
-      }
+const camera = new THREE.PerspectiveCamera(70, innerWidth / innerHeight, 0.05, 80);
+camera.position.set(0, 1.6, 0);
 
-      resume() {
-        if (!this.isInitialized) this.init();
-        if (this.ctx && this.ctx.state === 'suspended') {
-          this.ctx.resume();
-        }
-      }
+const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+renderer.setSize(innerWidth, innerHeight);
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.xr.enabled = true;
+document.body.appendChild(renderer.domElement);
 
-      // タイムディレーションに応じたローパス制御（聴勁の水没感 / スリップの無音化）
-      updateTimeScaleAudio(timeScale, dt) {
-        if (!this.isInitialized) return;
-        const now = this.ctx.currentTime;
-        if (timeScale <= 0.16) {
-          // スリップ発動時（0.15x）：BGMを極限まで絞り、心音を鳴らす
-          this.bgmFilter.frequency.setTargetAtTime(110, now, 0.04);
-          this.bgmGain.gain.setTargetAtTime(0.03, now, 0.04);
-          this.heartbeatTimer -= dt;
-          if (this.heartbeatTimer <= 0) {
-            this.playHeartbeat();
-            this.heartbeatTimer = 0.55;
-          }
-        } else if (timeScale <= 0.35) {
-          // 粘発動時（0.3x）：水中に潜ったような240Hzローパス
-          this.bgmFilter.frequency.setTargetAtTime(240, now, 0.05);
-          this.bgmGain.gain.setTargetAtTime(0.18, now, 0.05);
+// VR起動制御
+const vrBtn = document.getElementById('vr-btn');
+let activeSession = null;
+vrBtn.addEventListener('click', async () => {
+  sfx.init();
+  if (!navigator.xr) return;
+  try {
+    if (!activeSession) {
+      const session = await navigator.xr.requestSession('immersive-vr', { optionalFeatures: ['local-floor', 'bounded-floor'] });
+      renderer.xr.setReferenceSpaceType('local-floor');
+      await renderer.xr.setSession(session);
+      activeSession = session;
+      vrBtn.style.display = 'none';
+      session.addEventListener('end', () => { activeSession = null; vrBtn.style.display = 'inline-block'; });
+    }
+  } catch (e) { popJudge('HTTPS REQUIRED FOR VR', '#ff2a6d'); }
+});
+
+scene.add(new THREE.AmbientLight(0xd0e8ff, 0.9));
+const dLight = new THREE.DirectionalLight(0xffffff, 1.8);
+dLight.position.set(2, 10, 4);
+scene.add(dLight);
+
+// ミニマルな極細フロアライン
+const grid = new THREE.PolarGridHelper(16, 12, 8, 64, 0x0a2e46, 0x061524);
+grid.position.y = 0.01;
+scene.add(grid);
+
+// 射出方向ロックオン・レーザー予測線（パリィ成立時の0.45秒間だけ走る）
+const laserGeo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3(0, 0, -10)]);
+const laserMat = new THREE.LineBasicMaterial({ color: 0x00f0ff, transparent: true, opacity: 0 });
+const laserLine = new THREE.Line(laserGeo, laserMat);
+scene.add(laserLine);
+
+// VR内でも邪魔にならないミニマル空間ポップアップ文字（邪魔な枠・背景なし）
+const vrTextCv = document.createElement('canvas');
+vrTextCv.width = 512; vrTextCv.height = 128;
+const vrTextCtx = vrTextCv.getContext('2d');
+const vrTextTex = new THREE.CanvasTexture(vrTextCv);
+const vrTextMesh = new THREE.Mesh(
+  new THREE.PlaneGeometry(1.4, 0.35),
+  new THREE.MeshBasicMaterial({ map: vrTextTex, transparent: true, depthWrite: false })
+);
+vrTextMesh.position.set(0, 2.05, -2.4);
+scene.add(vrTextMesh);
+
+// =========================================================================
+// 3. シャープなブレード型ハンド＆HMDトラッカー
+// =========================================================================
+function createBladeHand(colHex, xOffset) {
+  const g = new THREE.Group();
+  // もっさりした丸円盤を廃止し、シャープな菱形エネルギーブレードに変更
+  const bladeGeo = new THREE.OctahedronGeometry(0.11, 0);
+  bladeGeo.scale(1.1, 0.14, 1.4);
+  const mat = new THREE.MeshStandardMaterial({
+    color: colHex, emissive: colHex, emissiveIntensity: 0.7, flatShading: true
+  });
+  const mesh = new THREE.Mesh(bladeGeo, mat);
+  const wire = new THREE.Mesh(bladeGeo, new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true, transparent: true, opacity: 0.5 }));
+  g.add(mesh, wire);
+  scene.add(g);
+
+  return {
+    mesh: g, pos: new THREE.Vector3(xOffset, 1.35, -0.5), prevPos: new THREE.Vector3(xOffset, 1.35, -0.5),
+    vel: new THREE.Vector3(), speed: 0, prevSpeed: 0, normal: new THREE.Vector3(0, 0, -1),
+    strokeStart: new THREE.Vector3(), moving: false, peakAccel: 0, strokeDist: 0, ctrl: null,
+    haptic(v, ms) { try { this.ctrl?.gamepad?.hapticActuators?.[0]?.pulse(v, ms); } catch (e) {} }
+  };
+}
+const handL = createBladeHand(0x00f0ff, -0.22);
+const handR = createBladeHand(0xffd000, 0.22);
+
+const c0 = renderer.xr.getController(0), c1 = renderer.xr.getController(1);
+scene.add(c0, c1);
+c0.addEventListener('connected', e => handL.ctrl = e.data);
+c1.addEventListener('connected', e => handR.ctrl = e.data);
+c0.addEventListener('selectstart', () => { sfx.init(); if (state.over || state.win) resetGame(); });
+c1.addEventListener('selectstart', () => { sfx.init(); if (state.over || state.win) resetGame(); });
+
+const hmd = { pos: new THREE.Vector3(0, 1.6, 0), prevQ: new THREE.Quaternion(), angVel: 0, cd: 0 };
+const pc = { mx: 0, my: 0, deg: 45, punchT: 0, stroke: 0.09, parrySnapT: 0 };
+
+addEventListener('mousemove', e => {
+  pc.mx = (e.clientX / innerWidth) * 2 - 1;
+  pc.my = -(e.clientY / innerHeight) * 2 + 1;
+  pc.parrySnapT = 0.15; // マウスを動かした瞬間はジャストパリィ受付
+});
+addEventListener('wheel', e => {
+  pc.deg = THREE.MathUtils.clamp(pc.deg + (e.deltaY > 0 ? -5 : 5), 10, 80);
+  popJudge(`ANGLE ${pc.deg}°`, pc.deg >= 25 && pc.deg <= 68 ? '#00f0ff' : '#ff2a6d');
+});
+addEventListener('mousedown', e => {
+  if (e.target.tagName === 'BUTTON') return;
+  sfx.init();
+  if (e.button === 0) {
+    if (state.over || state.win) resetGame();
+    else { pc.punchT = 0.14; pc.stroke = e.shiftKey ? 0.38 : 0.08; }
+  }
+  if (e.button === 2) hmd.angVel = 4.5;
+});
+addEventListener('contextmenu', e => e.preventDefault());
+addEventListener('keydown', e => {
+  if (e.code === 'Space') { sfx.init(); pc.punchT = 0.14; pc.stroke = e.shiftKey ? 0.38 : 0.08; }
+  if (e.code === 'KeyQ' || e.code === 'KeyE') { sfx.init(); hmd.angVel = 4.5; }
+});
+
+// =========================================================================
+// 4. 全5ウェーブ定義（連撃リズム＆ビリヤード配置）
+// =========================================================================
+const WAVES = [
+  { t: 'WAVE 01 // 聴勁と二拍子', s: '前手で弾き（タッ！）、0.45秒の収縮リングに合わせて寸勁を叩き込め（タン！）', iv: 2.8, kills: 7,
+    pat: i => i % 2 ? [{ type: 'Spear', a: 0, d: 10, v: 9.0, w: 0 }, { type: 'Spear', a: 3, d: 12.5, v: 9.0, w: 0.12 }] : [{ type: 'Spear', a: i % 4 ? 20 : -20, d: 10, v: 8.8, w: 0 }] },
+  { t: 'WAVE 02 // レーザー誘導ビリヤード', s: 'パリィで走るレーザー予測線を後続の敵群へ重ね、一撃で貫通連鎖させよ', iv: 3.0, kills: 12,
+    pat: i => i % 2 === 0 ? [{ type: 'Hammer', a: 0, d: 10.5, v: 10.0, w: 0 }, { type: 'Spear', a: 28, d: 8.5, v: 5.0, w: 0 }, { type: 'Spear', a: 34, d: 9.2, v: 5.0, w: 0.1 }] : [{ type: 'Spear', a: -24, d: 10, v: 9.5, w: 0 }, { type: 'Spear', a: 24, d: 10, v: 9.5, w: 0.28 }] },
+  { t: 'WAVE 03 // 後の先・スリッピング', s: '顔面へ迫る赤き閃光(Viper)を首の回旋でかわし、耳元を通過する刹那に撃ち抜け', iv: 2.9, kills: 12,
+    pat: i => [{ type: 'Hammer', a: -20, d: 10, v: 9.5, w: 0 }, { type: 'Viper', a: 5, d: 11.5, v: 16.0, w: 0.32 }] },
+  { t: 'WAVE 04 // タ・タ・ドン！連続パリィ', s: '時間差で飛来する連撃をリズミカルに弾き、束ねた敵群を一気に粉砕せよ', iv: 3.4, kills: 16,
+    pat: i => { const dir = i % 2 ? 1 : -1; return [{ type: 'Spear', a: -35 * dir, d: 10.5, v: 10.5, w: 0 }, { type: 'Hammer', a: -10 * dir, d: 10.5, v: 10.5, w: 0.25 }, { type: 'Spear', a: 18 * dir, d: 10.5, v: 10.5, w: 0.5 }, { type: 'Viper', a: 4 * dir, d: 12, v: 16.5, w: 0.85 }]; } },
+  { t: 'FINAL WAVE // 極限化勁・百花繚乱', s: '全方位スパイラル連撃を捌き切り、最後に迫る黄金の【BOSS CORE】を撃ち抜け！', iv: 3.8, kills: 20,
+    pat: i => i === 0 ? [{ type: 'Spear', a: -50, d: 11, v: 11, w: 0 }, { type: 'Hammer', a: -22, d: 11, v: 11, w: 0.22 }, { type: 'Spear', a: 0, d: 11, v: 11, w: 0.44 }, { type: 'Hammer', a: 25, d: 11, v: 11, w: 0.66 }] : [{ type: 'Viper', a: -8, d: 12, v: 17, w: 0 }, { type: 'Boss', a: 0, d: 13, v: 10.5, w: 0.22 }, { type: 'Spear', a: -30, d: 11.5, v: 9, w: 0.35 }, { type: 'Spear', a: 30, d: 11.5, v: 9, w: 0.35 }] }
+];
+
+const enemies = [], parts = [], rings = [];
+const state = { wIdx: 0, spTimer: 0.8, batch: 0, kills: 0, queue: [], scale: 1, dilT: 0, hitStop: 0, score: 0, chain: 0, hp: 3, over: false, win: false };
+
+function spawnEnemy({ type, a, d, v }) {
+  const cfg = {
+    Spear:  { geo: new THREE.ConeGeometry(0.22, 0.85, 4).rotateX(Math.PI / 2), col: 0x00f0ff, r: 0.36 },
+    Hammer: { geo: new THREE.OctahedronGeometry(0.42, 0), col: 0xff7700, r: 0.48 },
+    Viper:  { geo: new THREE.ConeGeometry(0.14, 1.05, 3).rotateX(Math.PI / 2), col: 0xff0055, r: 0.34 },
+    Boss:   { geo: new THREE.IcosahedronGeometry(0.82, 0), col: 0xffd000, r: 0.88 }
+  }[type];
+
+  const g = new THREE.Group();
+  const mat = new THREE.MeshStandardMaterial({ color: cfg.col, emissive: cfg.col, emissiveIntensity: 0.65, flatShading: true });
+  const mesh = new THREE.Mesh(cfg.geo, mat);
+  const wire = new THREE.Mesh(cfg.geo, new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true, transparent: true, opacity: 0.45 }));
+
+  // 0.45秒でキュッと収縮するタイミングリング（パリィ時に出現）
+  const ringMat = new THREE.MeshBasicMaterial({ color: 0xffea00, side: THREE.DoubleSide, transparent: true, opacity: 0 });
+  const ring = new THREE.Mesh(new THREE.RingGeometry(cfg.r * 0.45, cfg.r * 0.58, 24), ringMat);
+  g.add(mesh, wire, ring);
+
+  const rad = THREE.MathUtils.degToRad(a), y = type === 'Viper' ? 1.58 : 1.38;
+  g.position.set(Math.sin(rad) * d, y, -Math.cos(rad) * d);
+  const target = new THREE.Vector3(0, y, 0);
+  g.lookAt(target);
+  scene.add(g);
+
+  enemies.push({
+    type, group: g, mesh, mat, ring, ringMat, r: cfg.r, col: cfg.col,
+    pos: g.position, vel: target.sub(g.position).normalize().multiplyScalar(v),
+    inSpeed: v, st: 'IN', eff: 1, timer: 0, maxTimer: 0.45
+  });
+}
+
+function addSpark(pos, col, n = 16, speed = 11) {
+  for (let i = 0; i < n; i++) {
+    const m = new THREE.Mesh(new THREE.TetrahedronGeometry(0.055, 0), new THREE.MeshBasicMaterial({ color: col, transparent: true }));
+    m.position.copy(pos); scene.add(m);
+    parts.push({ m, v: new THREE.Vector3((Math.random() - 0.5) * speed, (Math.random() - 0.3) * speed, (Math.random() - 0.5) * speed), life: 0.38 });
+  }
+}
+
+function addPulseRing(pos, lookDir, col = 0x00f0ff, maxSc = 3.2) {
+  const mat = new THREE.MeshBasicMaterial({ color: col, side: THREE.DoubleSide, transparent: true, opacity: 0.9 });
+  const m = new THREE.Mesh(new THREE.RingGeometry(0.12, 0.18, 24), mat);
+  m.position.copy(pos);
+  m.lookAt(pos.clone().add(lookDir));
+  scene.add(m);
+  rings.push({ m, mat, spd: maxSc * 6.5, life: 0.25 });
+}
+
+function popJudge(txt, col = '#00f0ff') {
+  const el = document.getElementById('judge');
+  el.textContent = txt; el.style.color = col;
+  el.style.transform = 'scale(1.12)';
+  setTimeout(() => el.style.transform = 'scale(1)', 80);
+
+  vrTextCtx.clearRect(0, 0, 512, 128);
+  vrTextCtx.fillStyle = col;
+  vrTextCtx.font = '900 36px sans-serif';
+  vrTextCtx.textAlign = 'center';
+  vrTextCtx.fillText(txt, 256, 64);
+  vrTextCtx.fillStyle = 'rgba(255,255,255,0.7)';
+  vrTextCtx.font = '600 20px sans-serif';
+  vrTextCtx.fillText(`WAVE ${state.wIdx + 1}   SCORE ${state.score}   CHAIN ${state.chain}`, 256, 106);
+  vrTextTex.needsUpdate = true;
+}
+
+function syncUI() {
+  document.getElementById('ui-wave').textContent = `0${state.wIdx + 1}`;
+  document.getElementById('ui-score').textContent = String(state.score).padStart(4, '0');
+  document.getElementById('ui-chain').textContent = state.chain;
+  document.getElementById('ui-hp').textContent = '/'.repeat(Math.max(0, state.hp));
+  document.getElementById('flash').style.boxShadow =
+    state.scale <= 0.22 ? 'inset 0 0 80px rgba(255,0,85,0.45)' :
+    state.scale <= 0.50 ? 'inset 0 0 60px rgba(0,240,255,0.35)' : 'none';
+}
+
+function setWave(idx) {
+  state.wIdx = THREE.MathUtils.clamp(idx, 0, WAVES.length - 1);
+  state.spTimer = 0.8; state.batch = 0; state.kills = 0; state.queue = [];
+  document.getElementById('w-title').textContent = WAVES[state.wIdx].t;
+  document.getElementById('w-sub').textContent = WAVES[state.wIdx].s;
+  popJudge(`WAVE 0${state.wIdx + 1}`, '#00f0ff'); syncUI();
+}
+
+function resetGame() {
+  enemies.forEach(e => scene.remove(e.group)); enemies.length = 0;
+  Object.assign(state, { score: 0, chain: 0, hp: 3, scale: 1, dilT: 0, hitStop: 0, over: false, win: false });
+  setWave(0);
+}
+
+document.getElementById('btn-skip').onclick = () => { sfx.init(); enemies.forEach(e => scene.remove(e.group)); enemies.length = 0; setWave((state.wIdx + 1) % WAVES.length); };
+document.getElementById('btn-retry').onclick = () => { sfx.init(); resetGame(); };
+
+// =========================================================================
+// 5. メインループ（0.45秒の高速二拍子パリィ＆レーザーロックオン）
+// =========================================================================
+const clock = new THREE.Clock();
+
+renderer.setAnimationLoop(() => {
+  const dt = Math.min(clock.getDelta(), 0.05);
+
+  // ヒットストップ（ジャストパリィ時の0.05秒凍結 ＆ ボス撃破時の0.5秒凍結）
+  if (state.hitStop > 0) {
+    state.hitStop -= dt;
+    if (state.hitStop <= 0 && state.win) {
+      enemies.forEach(e => { addSpark(e.pos, 0xffd000, 22, 16); scene.remove(e.group); }); enemies.length = 0;
+      sfx.chain(9); state.score += 5000;
+      document.getElementById('w-title').textContent = 'MASTER OF KAKEI // COMPLETE';
+      popJudge('ALL WAVES CLEARED', '#ffd000'); syncUI();
+    }
+    renderer.render(scene, camera); return;
+  }
+
+  // HMD＆コントローラー更新
+  const xrCam = renderer.xr.isPresenting ? renderer.xr.getCamera() : camera;
+  xrCam.getWorldPosition(hmd.pos);
+  const q = new THREE.Quaternion(); xrCam.getWorldQuaternion(q);
+  const ang = 2 * Math.acos(Math.min(1, Math.abs(q.dot(hmd.prevQ))));
+  hmd.angVel = Math.max(dt > 0 ? ang / dt : 0, hmd.angVel * 0.82);
+  hmd.prevQ.copy(q);
+  if (hmd.cd > 0) hmd.cd -= dt;
+
+  if (renderer.xr.isPresenting) {
+    c0.getWorldPosition(handL.pos); c0.getWorldQuaternion(handL.mesh.quaternion);
+    handL.normal.set(0, 0, -1).applyQuaternion(handL.mesh.quaternion).normalize();
+    c1.getWorldPosition(handR.pos); c1.getWorldQuaternion(handR.mesh.quaternion);
+    handR.normal.set(0, 0, -1).applyQuaternion(handR.mesh.quaternion).normalize();
+  } else {
+    const tx = pc.mx * 0.85, ty = THREE.MathUtils.clamp(1.35 + pc.my * 0.45, 0.9, 1.85);
+    handL.pos.lerp(new THREE.Vector3(tx, ty, -0.62), 0.45);
+    const rad = THREE.MathUtils.degToRad(pc.deg);
+    handL.mesh.rotation.set(0, -rad, 0);
+    handL.normal.set(Math.sin(rad), 0, -Math.cos(rad)).normalize();
+    if (pc.parrySnapT > 0) pc.parrySnapT -= dt;
+
+    if (pc.punchT > 0) {
+      pc.punchT -= dt; handR.pos.lerp(new THREE.Vector3(tx, ty, -0.68), 0.72);
+      handR.strokeDist = pc.stroke; handR.peakAccel = pc.stroke <= 0.16 ? 42 : 18;
+    } else handR.pos.lerp(new THREE.Vector3(tx + 0.16, ty - 0.08, -0.32), 0.3);
+    handR.normal.set(pc.mx * 0.35, pc.my * 0.15, -1).normalize();
+  }
+
+  [handL, handR].forEach(h => {
+    if (dt <= 0) return;
+    h.vel.subVectors(h.pos, h.prevPos).divideScalar(dt);
+    h.speed = h.vel.length();
+    const acc = (h.speed - h.prevSpeed) / dt;
+    if (h.speed > 0.95 && h.vel.z < -0.3) {
+      if (!h.moving) { h.moving = true; h.strokeStart.copy(h.prevPos); h.peakAccel = Math.max(10, acc); }
+      else h.peakAccel = Math.max(h.peakAccel, acc);
+      h.strokeDist = h.pos.distanceTo(h.strokeStart);
+    } else if (h.speed < 0.45) { h.moving = false; h.peakAccel = 0; h.strokeDist = 0; }
+    h.prevPos.copy(h.pos); h.prevSpeed = h.speed; h.mesh.position.copy(h.pos);
+  });
+
+  const front = Math.abs(handL.pos.z - hmd.pos.z) >= Math.abs(handR.pos.z - hmd.pos.z) - 0.05 ? handL : handR;
+  const rear = front === handL ? handR : handL;
+
+  if (state.dilT > 0 && (state.dilT -= dt) <= 0) { state.scale = 1.0; syncUI(); }
+  const sdt = dt * state.scale;
+
+  // スポーン進行
+  if (!state.over && !state.win) {
+    const w = WAVES[state.wIdx];
+    if ((state.spTimer -= sdt) <= 0) {
+      w.pat(state.batch++).forEach(p => state.queue.push({ ...p, t: p.w }));
+      state.spTimer = w.iv;
+    }
+    for (let i = state.queue.length - 1; i >= 0; i--) {
+      if ((state.queue[i].t -= sdt) <= 0) { spawnEnemy(state.queue[i]); state.queue.splice(i, 1); }
+    }
+    if (state.kills >= w.kills && enemies.length === 0 && state.queue.length === 0) {
+      if (state.wIdx < WAVES.length - 1) { sfx.chain(5); setWave(state.wIdx + 1); }
+      else { state.win = true; popJudge('ALL WAVES CLEARED', '#ffd000'); }
+    }
+  }
+
+  laserMat.opacity = 0;
+
+  // 敵挙動＆パリィ判定
+  for (let i = enemies.length - 1; i >= 0; i--) {
+    const e = enemies[i];
+
+    if (e.st === 'IN') {
+      e.pos.addScaledVector(e.vel, sdt);
+      e.mesh.rotation.z += 3.2 * sdt;
+
+      // 1) 前手「高速パリィ（0.45秒の軌道偏向窓）」
+      if (e.pos.distanceTo(front.pos) < e.r + 0.28 && e.type !== 'Viper') {
+        const deg = THREE.MathUtils.radToDeg(Math.acos(THREE.MathUtils.clamp(e.vel.clone().normalize().negate().dot(front.normal), -1, 1)));
+        if (deg >= 20 && deg <= 70) {
+          // 引きつけ距離または前手のスナップ速度で「JUST PARRY」判定
+          const isJust = (front.speed > 0.45 || pc.parrySnapT > 0) && Math.abs(e.pos.z) < 0.95;
+          e.st = 'PARRIED';
+          e.maxTimer = 0.48; // 1.8秒のダラダラ吸着を廃止し、0.48秒のキレのある二拍子窓へ！
+          e.timer = e.maxTimer;
+          e.eff = isJust ? 1.45 : 1.0;
+          e.ringMat.opacity = 1.0;
+
+          // ベタ付き停止せず、前手法線方向（脇）へ軌道偏向して滑り抜ける
+          const deflectDir = e.vel.clone().normalize().addScaledVector(front.normal, 0.85).normalize();
+          e.vel.copy(deflectDir).multiplyScalar(e.inSpeed * 0.35);
+
+          state.scale = 0.38;
+          state.dilT = 0.48;
+          if (isJust) state.hitStop = 0.045; // 心地よい瞬間ヒットストップ
+
+          sfx.parry(isJust);
+          front.haptic(isJust ? 0.85 : 0.45, isJust ? 55 : 35);
+          addSpark(e.pos, isJust ? 0xffea00 : 0x00f0ff, isJust ? 18 : 10, 9);
+          addPulseRing(e.pos, front.normal, isJust ? 0xffea00 : 0x00f0ff, 2.2);
+          popJudge(isJust ? 'JUST PARRY // 極・聴勁!' : 'PARRY // 化勁', isJust ? '#ffea00' : '#00f0ff');
+          syncUI();
         } else {
-          // 通常時（1.0x）
-          this.bgmFilter.frequency.setTargetAtTime(1400, now, 0.1);
-          this.bgmGain.gain.setTargetAtTime(0.15, now, 0.1);
+          sfx.guardBreak(); front.haptic(0.8, 80);
+          popJudge(`BAD ANGLE (${deg.toFixed(0)}°)`, '#ff2a6d');
+          e.vel.multiplyScalar(0.6);
         }
       }
 
-      // 「粘（Nen）」吸着成功音：柔らかく吸い付く水滴共鳴パルス
-      playNenAttach() {
-        this.resume();
-        const now = this.ctx.currentTime;
-        const osc = this.ctx.createOscillator();
-        const gain = this.ctx.createGain();
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(320, now);
-        osc.frequency.exponentialRampToValueAtTime(140, now + 0.22);
-        gain.gain.setValueAtTime(0.35, now);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.24);
-        osc.connect(gain);
-        gain.connect(this.masterGain);
-        osc.start(now);
-        osc.stop(now + 0.25);
+      // 2) 首「スリッピング」：ワープ固定を廃止し、耳元をスローでかすめ飛ぶ自然な軌道へ
+      const dHead = e.pos.distanceTo(hmd.pos);
+      if (dHead < 1.25 && dHead > 0.22 && hmd.angVel > 1.3 && hmd.cd <= 0) {
+        e.st = 'PARRIED';
+        e.maxTimer = 0.65;
+        e.timer = e.maxTimer;
+        e.eff = 1.5;
+        e.ringMat.opacity = 1.0;
+        // 顔のすぐ横（耳元）へ軌道を逸らしてスロー通過させる
+        const side = e.pos.x >= 0 ? 0.35 : -0.35;
+        e.vel.set(side * 1.5, 0, 2.2);
+        hmd.cd = 0.75;
+        state.scale = 0.18;
+        state.dilT = 0.65;
+        if (state.hp < 3) state.hp++;
+        sfx.slip();
+        addPulseRing(e.pos, e.vel, 0xff0055, 2.5);
+        popJudge('SLIP // 見切り反撃! (+1 LIFE)', '#ff0055');
+        syncUI();
       }
 
-      // 「スリップ（Slip）」発動音：高周波のキーンという耳鳴り＋時間凍結チャイム
-      playSlipTrigger() {
-        this.resume();
-        const now = this.ctx.currentTime;
-        const osc = this.ctx.createOscillator();
-        const gain = this.ctx.createGain();
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(1760, now);
-        osc.frequency.exponentialRampToValueAtTime(880, now + 0.45);
-        gain.gain.setValueAtTime(0.25, now);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.48);
-        osc.connect(gain);
-        gain.connect(this.masterGain);
-        osc.start(now);
-        osc.stop(now + 0.5);
-        this.playHeartbeat();
+      // 3) 被弾判定
+      if (e.pos.z > -0.15) {
+        addSpark(e.pos, 0xff0055, 16, 10); sfx.guardBreak();
+        scene.remove(e.group); enemies.splice(i, 1);
+        state.hp--; state.chain = 0; popJudge('HIT // 被弾', '#ff0055');
+        if (state.hp <= 0) { state.over = true; document.getElementById('w-title').textContent = 'GAME OVER // 居着き敗北'; }
+        syncUI(); continue;
       }
 
-      // 心音「ドクン…」
-      playHeartbeat() {
-        if (!this.isInitialized) return;
-        const now = this.ctx.currentTime;
-        [0, 0.14].forEach((offset, idx) => {
-          const osc = this.ctx.createOscillator();
-          const gain = this.ctx.createGain();
-          osc.type = 'sine';
-          osc.frequency.setValueAtTime(idx === 0 ? 75 : 62, now + offset);
-          osc.frequency.exponentialRampToValueAtTime(28, now + offset + 0.12);
-          gain.gain.setValueAtTime(idx === 0 ? 0.55 : 0.38, now + offset);
-          gain.gain.exponentialRampToValueAtTime(0.001, now + offset + 0.13);
-          osc.connect(gain);
-          gain.connect(this.masterGain);
-          osc.start(now + offset);
-          osc.stop(now + offset + 0.14);
-        });
-      }
+    } else if (e.st === 'PARRIED') {
+      // パリィ後の0.48秒間：脇へゆっくり滑りながら、タイミングリングが中心へキュッと収縮する
+      e.timer -= dt;
+      e.pos.addScaledVector(e.vel, dt * 0.45);
+      const shrink = Math.max(0.25, (e.timer / e.maxTimer) * 2.2);
+      e.ring.scale.set(shrink, shrink, 1);
+      e.ring.lookAt(hmd.pos);
 
-      // 「発（寸勁）」インパクト音：isCritical=trueなら重低音サブベース＋空間破砕音
-      playSunkeiImpact(isCritical = true) {
-        this.resume();
-        const now = this.ctx.currentTime;
-        const osc = this.ctx.createOscillator();
-        const gain = this.ctx.createGain();
-        osc.type = isCritical ? 'triangle' : 'sine';
-        osc.frequency.setValueAtTime(isCritical ? 190 : 140, now);
-        osc.frequency.exponentialRampToValueAtTime(32, now + (isCritical ? 0.35 : 0.2));
-        gain.gain.setValueAtTime(isCritical ? 0.85 : 0.5, now);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + (isCritical ? 0.38 : 0.22));
-        osc.connect(gain);
-        gain.connect(this.masterGain);
-        osc.start(now);
-        osc.stop(now + 0.4);
-
-        if (isCritical) {
-          // クリティカル寸勁の倍音キラメキ
-          const chime = this.ctx.createOscillator();
-          const cGain = this.ctx.createGain();
-          chime.type = 'sine';
-          chime.frequency.setValueAtTime(1046.5, now);
-          chime.frequency.exponentialRampToValueAtTime(2093.0, now + 0.25);
-          cGain.gain.setValueAtTime(0.3, now);
-          cGain.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
-          chime.connect(cGain);
-          cGain.connect(this.masterGain);
-          chime.start(now);
-          chime.stop(now + 0.3);
+      // 射出方向ロックオン・レーザー予測線を表示
+      const aimDir = rear.normal.clone(); aimDir.z = Math.min(-0.5, aimDir.z); aimDir.normalize();
+      enemies.forEach(o => {
+        if (o !== e && o.st !== 'OUT') {
+          const to = o.pos.clone().sub(e.pos).normalize();
+          if (aimDir.dot(to) > 0.72) aimDir.lerp(to, 0.75).normalize();
         }
-      }
-
-      // 「居着き（大振り / 角度不一致）」の金属弾かれ音
-      playClashPenalty() {
-        this.resume();
-        const now = this.ctx.currentTime;
-        [210, 337, 512].forEach((freq) => {
-          const osc = this.ctx.createOscillator();
-          const gain = this.ctx.createGain();
-          osc.type = 'square';
-          osc.frequency.setValueAtTime(freq, now);
-          osc.frequency.linearRampToValueAtTime(freq * 0.85, now + 0.16);
-          gain.gain.setValueAtTime(0.14, now);
-          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
-          osc.connect(gain);
-          gain.connect(this.masterGain);
-          osc.start(now);
-          osc.stop(now + 0.19);
-        });
-      }
-
-      // ビリヤード連鎖撃破のペンタトニック和音ベル
-      playChainHarmony(chainIndex) {
-        this.resume();
-        const now = this.ctx.currentTime;
-        const noteIdx = Math.min(chainIndex, this.pentatonic.length - 1);
-        const baseFreq = this.pentatonic[noteIdx];
-
-        [baseFreq, baseFreq * 1.5].forEach((f, i) => {
-          const osc = this.ctx.createOscillator();
-          const gain = this.ctx.createGain();
-          osc.type = i === 0 ? 'sine' : 'triangle';
-          osc.frequency.setValueAtTime(f, now);
-          gain.gain.setValueAtTime(i === 0 ? 0.35 : 0.15, now);
-          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
-          osc.connect(gain);
-          gain.connect(this.masterGain);
-          osc.start(now);
-          osc.stop(now + 0.48);
-        });
-      }
-    }
-
-    const audio = new KakeiAudioEngine();
-
-    // =========================================================================
-    // 2. Three.js シーン・カメラ・WebXR・空間ステージ構築
-    // =========================================================================
-    const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x05070c);
-    scene.fog = new THREE.FogExp2(0x05070c, 0.045);
-
-    const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.05, 80);
-    camera.position.set(0, 1.6, 0);
-
-    const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.xr.enabled = true;
-    document.body.appendChild(renderer.domElement);
-
-    const vrBtn = VRButton.createButton(renderer);
-    vrBtn.addEventListener('click', () => audio.resume());
-    document.body.appendChild(vrBtn);
-
-    // ライティング
-    const ambientLight = new THREE.AmbientLight(0x80b8ff, 0.7);
-    scene.add(ambientLight);
-
-    const dirLight = new THREE.DirectionalLight(0xffffff, 1.4);
-    dirLight.position.set(3, 8, 4);
-    scene.add(dirLight);
-
-    const pointLight = new THREE.PointLight(0x00e5ff, 2.0, 15);
-    pointLight.position.set(0, 2.2, -2.0);
-    scene.add(pointLight);
-
-    // 前方180度・扇状アリーナのグリッド床
-    const arenaGroup = new THREE.Group();
-    scene.add(arenaGroup);
-
-    const polarGrid = new THREE.PolarGridHelper(14, 18, 10, 64, 0x005577, 0x00283d);
-    polarGrid.position.y = 0.01;
-    arenaGroup.add(polarGrid);
-
-    // 前方180度境界を示すネオンアーク
-    const arcGeo = new THREE.RingGeometry(1.15, 1.2, 48, 1, 0, Math.PI);
-    arcGeo.rotateX(-Math.PI / 2);
-    const arcMat = new THREE.MeshBasicMaterial({ color: 0x00e5ff, side: THREE.DoubleSide, transparent: true, opacity: 0.55 });
-    const frontArc = new THREE.Mesh(arcGeo, arcMat);
-    frontArc.position.set(0, 0.02, 0);
-    arenaGroup.add(frontArc);
-
-    // Wave 1用：理想の前手接触角（30°〜60°）を示す空間ガイドリング
-    const guideGroup = new THREE.Group();
-    const guideRingGeo = new THREE.RingGeometry(0.18, 0.22, 32);
-    const guideRingMat = new THREE.MeshBasicMaterial({ color: 0x00ffcc, side: THREE.DoubleSide, transparent: true, opacity: 0.65 });
-    const guideRingMesh = new THREE.Mesh(guideRingGeo, guideRingMat);
-    guideGroup.add(guideRingMesh);
-    guideGroup.position.set(0.28, 1.38, -0.55);
-    guideGroup.rotation.y = THREE.MathUtils.degToRad(-42);
-    scene.add(guideGroup);
-
-    // VR空間内でも視認できる3DフローティングHUDキャンバス
-    const vrHudCanvas = document.createElement('canvas');
-    vrHudCanvas.width = 512;
-    vrHudCanvas.height = 160;
-    const vrHudCtx = vrHudCanvas.getContext('2d');
-    const vrHudTex = new THREE.CanvasTexture(vrHudCanvas);
-    const vrHudMat = new THREE.MeshBasicMaterial({ map: vrHudTex, transparent: true });
-    const vrHudMesh = new THREE.Mesh(new THREE.PlaneGeometry(1.5, 0.47), vrHudMat);
-    vrHudMesh.position.set(0, 2.35, -2.6);
-    scene.add(vrHudMesh);
-
-    function updateVrHudCanvas(waveTitle, statusText, statusColor = '#00e5ff') {
-      vrHudCtx.clearRect(0, 0, 512, 160);
-      vrHudCtx.fillStyle = 'rgba(4, 12, 26, 0.78)';
-      vrHudCtx.strokeStyle = statusColor;
-      vrHudCtx.lineWidth = 3;
-      vrHudCtx.strokeRect(6, 6, 500, 148);
-      vrHudCtx.fillRect(6, 6, 500, 148);
-
-      vrHudCtx.fillStyle = '#9be7ff';
-      vrHudCtx.font = 'bold 22px sans-serif';
-      vrHudCtx.textAlign = 'center';
-      vrHudCtx.fillText(waveTitle, 256, 42);
-
-      vrHudCtx.fillStyle = statusColor;
-      vrHudCtx.font = 'bold 30px sans-serif';
-      vrHudCtx.fillText(statusText, 256, 92);
-
-      vrHudCtx.fillStyle = '#ffffff';
-      vrHudCtx.font = 'bold 20px sans-serif';
-      vrHudCtx.fillText(`HP: ${'♥'.repeat(Math.max(0, gameState.hp))}   SCORE: ${gameState.score}   CHAIN: ${gameState.chain}`, 256, 134);
-      vrHudTex.needsUpdate = true;
-    }
-
-    // =========================================================================
-    // 3. プレイヤーの身体トラッキング（HMD、前手「粘」、後手「発」）
-    // =========================================================================
-    class HandTracker {
-      constructor(colorHex, isFrontDefault) {
-        this.mesh = new THREE.Group();
-        // 掌（パーム面）を表す八角形ディスクと法線矢印
-        const palmGeo = new THREE.CylinderGeometry(0.11, 0.11, 0.018, 16);
-        palmGeo.rotateX(Math.PI / 2);
-        this.palmMat = new THREE.MeshStandardMaterial({
-          color: colorHex,
-          emissive: colorHex,
-          emissiveIntensity: 0.45,
-          transparent: true,
-          opacity: 0.85
-        });
-        this.palmMesh = new THREE.Mesh(palmGeo, this.palmMat);
-        this.mesh.add(this.palmMesh);
-
-        // 法線ベクトル（面の向き）インジケーター
-        const arrowGeo = new THREE.ConeGeometry(0.025, 0.09, 8);
-        arrowGeo.rotateX(Math.PI / 2);
-        arrowGeo.translate(0, 0, -0.07);
-        const arrowMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
-        this.mesh.add(new THREE.Mesh(arrowGeo, arrowMat));
-
-        scene.add(this.mesh);
-
-        this.pos = new THREE.Vector3(isFrontDefault ? -0.2 : 0.2, 1.35, isFrontDefault ? -0.55 : -0.3);
-        this.prevPos = this.pos.clone();
-        this.vel = new THREE.Vector3();
-        this.prevVel = new THREE.Vector3();
-        this.accel = 0;
-        this.normal = new THREE.Vector3(0, 0, -1);
-
-        // 寸勁（ショートストローク）計測用：加速開始地点の記録
-        this.strokeStartPos = this.pos.clone();
-        this.isAccelerating = false;
-        this.peakAccel = 0;
-        this.currentStrokeDist = 0;
-        this.controller = null;
-      }
-
-      update(dt) {
-        if (dt <= 0) return;
-        this.vel.subVectors(this.pos, this.prevPos).divideScalar(dt);
-        const speed = this.vel.length();
-        const prevSpeed = this.prevVel.length();
-        this.accel = (speed - prevSpeed) / dt;
-
-        // 突き出し（前方への移動）開始時のストローク計測
-        if (speed > 0.9 && this.vel.z < -0.3) {
-          if (!this.isAccelerating) {
-            this.isAccelerating = true;
-            this.strokeStartPos.copy(this.prevPos);
-            this.peakAccel = Math.max(8, this.accel);
-          } else {
-            this.peakAccel = Math.max(this.peakAccel, this.accel);
-          }
-          this.currentStrokeDist = this.pos.distanceTo(this.strokeStartPos);
-        } else if (speed < 0.45) {
-          this.isAccelerating = false;
-          this.peakAccel = 0;
-          this.currentStrokeDist = 0;
-        }
-
-        this.prevPos.copy(this.pos);
-        this.prevVel.copy(this.vel);
-        this.mesh.position.copy(this.pos);
-      }
-
-      pulseHaptics(intensity = 0.6, durationMs = 60) {
-        if (this.controller && this.controller.gamepad && this.controller.gamepad.hapticActuators && this.controller.gamepad.hapticActuators[0]) {
-          try {
-            this.controller.gamepad.hapticActuators[0].pulse(intensity, durationMs);
-          } catch (e) {}
-        }
-      }
-    }
-
-    const leftHand = new HandTracker(0x00e5ff, true);
-    const rightHand = new HandTracker(0xffd54f, false);
-
-    // WebXR コントローラーセットアップ
-    const controller0 = renderer.xr.getController(0);
-    const controller1 = renderer.xr.getController(1);
-    scene.add(controller0);
-    scene.add(controller1);
-
-    controller0.addEventListener('connected', (e) => {
-      leftHand.controller = e.data;
-    });
-    controller1.addEventListener('connected', (e) => {
-      rightHand.controller = e.data;
-    });
-    controller0.addEventListener('selectstart', () => {
-      audio.resume();
-      if (gameState.isGameOver || gameState.isVictory) resetGame();
-    });
-    controller1.addEventListener('selectstart', () => {
-      audio.resume();
-      if (gameState.isGameOver || gameState.isVictory) resetGame();
-    });
-
-    // HMD（頭部）トラッキング：スリッピング（首の回旋見切り）判定用
-    const hmdState = {
-      pos: new THREE.Vector3(0, 1.6, 0),
-      prevQuat: new THREE.Quaternion(),
-      angularSpeed: 0,
-      slipCooldown: 0
-    };
-
-    // PCブラウザでのテスト操作用ステート
-    const pcInput = {
-      mouseX: 0,
-      mouseY: 0,
-      frontAngleDeg: 45, // 適正30〜60度内の初期値
-      sunkeiTimer: 0,
-      strokeMode: 0.09 // 9cmの理想寸勁ストローク
-    };
-
-    window.addEventListener('mousemove', (e) => {
-      pcInput.mouseX = (e.clientX / window.innerWidth) * 2 - 1;
-      pcInput.mouseY = -(e.clientY / window.innerHeight) * 2 + 1;
-    });
-
-    window.addEventListener('wheel', (e) => {
-      pcInput.frontAngleDeg = THREE.MathUtils.clamp(pcInput.frontAngleDeg + (e.deltaY > 0 ? -5 : 5), 5, 85);
-      showJudgePopup(`前手角度: ${pcInput.frontAngleDeg}° ${pcInput.frontAngleDeg >= 30 && pcInput.frontAngleDeg <= 60 ? '(適正:粘)' : '(不適:居着き)'}`, pcInput.frontAngleDeg >= 30 && pcInput.frontAngleDeg <= 60 ? '#00e5ff' : '#ff5252');
-    });
-
-    // PC左クリック or Spaceキー：後手「発（寸勁）」トリガー
-    function triggerPcSunkei(isBigSwing = false) {
-      audio.resume();
-      if (gameState.isGameOver || gameState.isVictory) {
-        resetGame();
-        return;
-      }
-      pcInput.sunkeiTimer = 0.16;
-      pcInput.strokeMode = isBigSwing ? 0.42 : 0.09; // 9cm寸勁 or 42cm大振り
-    }
-
-    // PC右クリック or Q/Eキー：首スリップ（見切り回旋）トリガー
-    function triggerPcSlip() {
-      audio.resume();
-      hmdState.angularSpeed = 4.5; // 閾値を超える首回旋角速度を発生
-      camera.rotation.z = (Math.random() > 0.5 ? 1 : -1) * 0.14;
-      setTimeout(() => { camera.rotation.z = 0; }, 260);
-    }
-
-    window.addEventListener('mousedown', (e) => {
-      if (e.target.tagName === 'BUTTON') return;
-      if (e.button === 0) triggerPcSunkei(e.shiftKey);
-      if (e.button === 2) triggerPcSlip();
-    });
-    window.addEventListener('contextmenu', (e) => e.preventDefault());
-    window.addEventListener('keydown', (e) => {
-      if (e.code === 'Space') triggerPcSunkei(e.shiftKey);
-      if (e.code === 'KeyQ' || e.code === 'KeyE') triggerPcSlip();
-    });
-
-    // =========================================================================
-    // 4. 全5ウェーブ（150秒）レベルデザイン＆敵スポーン定義
-    // =========================================================================
-    const WAVE_DEFINITIONS = [
-      {
-        wave: 1,
-        title: 'WAVE 1: 聴勁の覚醒',
-        sub: '前手（30°〜60°）で触れて0.3倍速「粘」を発動し、短い「寸勁」で撃ち返せ',
-        duration: 25,
-        spawnInterval: 3.2,
-        totalKillsTarget: 7,
-        pattern: (spawnIdx) => {
-          // 前半は斜め25度から単発、後半は正面0度の縦列2体（ビリヤードチュートリアル）
-          if (spawnIdx % 3 === 2) {
-            return [
-              { type: 'Spear', angleDeg: 0, dist: 9.5, speed: 7.5, delay: 0 },
-              { type: 'Spear', angleDeg: 2, dist: 12.0, speed: 7.5, delay: 0.1 }
-            ];
-          }
-          const side = spawnIdx % 2 === 0 ? 22 : -22;
-          return [{ type: 'Spear', angleDeg: side, dist: 9.5, speed: 7.2, delay: 0 }];
-        }
-      },
-      {
-        wave: 2,
-        title: 'WAVE 2: 円弧と借力（ビリヤード連鎖）',
-        sub: '高質量の重撃型（Hammer）を前手で円弧誘導し、待機する敵の群れへ流し込め',
-        duration: 30,
-        spawnInterval: 3.4,
-        totalKillsTarget: 12,
-        pattern: (spawnIdx) => {
-          if (spawnIdx % 2 === 0) {
-            // 正面からHammer＋斜め35度にボーリングのピン状のSpear群
-            const clusterSide = (spawnIdx % 4 === 0) ? 32 : -32;
-            return [
-              { type: 'Hammer', angleDeg: 0, dist: 10.0, speed: 8.8, delay: 0 },
-              { type: 'Spear', angleDeg: clusterSide - 4, dist: 7.5, speed: 4.2, delay: 0 },
-              { type: 'Spear', angleDeg: clusterSide + 4, dist: 8.2, speed: 4.2, delay: 0.1 }
-            ];
-          } else {
-            // 双撃型（Twin）の左右交差突入
-            return [
-              { type: 'Spear', angleDeg: -28, dist: 9.5, speed: 8.5, delay: 0 },
-              { type: 'Spear', angleDeg: 28, dist: 9.5, speed: 8.5, delay: 0.45 }
-            ];
-          }
-        }
-      },
-      {
-        wave: 3,
-        title: 'WAVE 3: 居着きの破壊（首スリップ解禁）',
-        sub: '前手拘束中の高速Viperを「首の回旋（スリップ）」でいなし、0.15倍速ゼロ距離寸勁を叩き込め！',
-        duration: 30,
-        spawnInterval: 3.2,
-        totalKillsTarget: 12,
-        pattern: (spawnIdx) => {
-          if (spawnIdx % 2 === 0) {
-            // 1体目のHammerで前手を拘束した0.4秒後に、顔面へViperが高速突入
-            return [
-              { type: 'Hammer', angleDeg: -24, dist: 9.5, speed: 8.5, delay: 0 },
-              { type: 'Viper', angleDeg: 8, dist: 11.0, speed: 14.5, delay: 0.4 }
-            ];
-          } else {
-            return [
-              { type: 'Viper', angleDeg: -6, dist: 11.5, speed: 14.8, delay: 0 },
-              { type: 'Spear', angleDeg: 20, dist: 9.5, speed: 8.5, delay: 0.5 }
-            ];
-          }
-        }
-      },
-      {
-        wave: 4,
-        title: 'WAVE 4: 多人数掛けの極意（扇状120°包囲）',
-        sub: '波状攻撃を円運動で誘導して同士討ちさせ、すり抜けるViperをスリップで撃ち抜け',
-        duration: 35,
-        spawnInterval: 3.8,
-        totalKillsTarget: 16,
-        pattern: (spawnIdx) => {
-          const dir = spawnIdx % 2 === 0 ? 1 : -1;
-          return [
-            { type: 'Hammer', angleDeg: -42 * dir, dist: 10.5, speed: 9.5, delay: 0 },
-            { type: 'Spear', angleDeg: -15 * dir, dist: 10.0, speed: 9.0, delay: 0.35 },
-            { type: 'Spear', angleDeg: 18 * dir, dist: 10.0, speed: 9.0, delay: 0.7 },
-            { type: 'Viper', angleDeg: 5 * dir, dist: 12.0, speed: 15.5, delay: 1.05 }
-          ];
-        }
-      },
-      {
-        wave: 5,
-        title: 'FINAL WAVE: 百花繚乱・極限化勁',
-        sub: '180°スパイラル連撃を捌き切り、最後に迫る超巨大【BOSS CORE】をスリップ寸勁で粉砕せよ！',
-        duration: 35,
-        spawnInterval: 4.2,
-        totalKillsTarget: 20,
-        pattern: (spawnIdx) => {
-          if (spawnIdx === 0) {
-            // 前半：スパイラル連続突入
-            return [
-              { type: 'Spear', angleDeg: -60, dist: 10.5, speed: 10.0, delay: 0.0 },
-              { type: 'Hammer', angleDeg: -30, dist: 10.5, speed: 10.0, delay: 0.3 },
-              { type: 'Spear', angleDeg: 0, dist: 10.5, speed: 10.0, delay: 0.6 },
-              { type: 'Hammer', angleDeg: 30, dist: 10.5, speed: 10.0, delay: 0.9 },
-              { type: 'Viper', angleDeg: 55, dist: 11.5, speed: 15.5, delay: 1.2 }
-            ];
-          } else {
-            // 後半クライマックス：左右Viper＋正面から超巨大Boss Core
-            return [
-              { type: 'Viper', angleDeg: -12, dist: 12.0, speed: 16.0, delay: 0.0 },
-              { type: 'Boss', angleDeg: 0, dist: 12.5, speed: 9.5, delay: 0.25 },
-              { type: 'Spear', angleDeg: -35, dist: 11.0, speed: 8.0, delay: 0.4 },
-              { type: 'Spear', angleDeg: 35, dist: 11.0, speed: 8.0, delay: 0.4 },
-              { type: 'Spear', angleDeg: -18, dist: 12.5, speed: 8.0, delay: 0.5 },
-              { type: 'Spear', angleDeg: 18, dist: 12.5, speed: 8.0, delay: 0.5 }
-            ];
-          }
-        }
-      }
-    ];
-
-    // =========================================================================
-    // 5. 敵エンティティ＆エフェクト管理
-    // =========================================================================
-    const enemies = [];
-    const particles = [];
-    const shockwaves = [];
-
-    function createEnemyMesh(type) {
-      const group = new THREE.Group();
-      let geo, color, radius, mass;
-
-      if (type === 'Spear') {
-        geo = new THREE.ConeGeometry(0.24, 0.75, 6);
-        geo.rotateX(Math.PI / 2);
-        color = 0x00e5ff;
-        radius = 0.36;
-        mass = 1.0;
-      } else if (type === 'Hammer') {
-        geo = new THREE.OctahedronGeometry(0.42, 0);
-        color = 0xff9100;
-        radius = 0.48;
-        mass = 2.2;
-      } else if (type === 'Viper') {
-        geo = new THREE.ConeGeometry(0.15, 0.95, 4);
-        geo.rotateX(Math.PI / 2);
-        color = 0xff2a85;
-        radius = 0.34;
-        mass = 0.8;
-      } else if (type === 'Boss') {
-        geo = new THREE.DodecahedronGeometry(0.78, 0);
-        color = 0xffd54f;
-        radius = 0.85;
-        mass = 4.0;
-      }
-
-      const mat = new THREE.MeshStandardMaterial({
-        color,
-        emissive: color,
-        emissiveIntensity: 0.5,
-        roughness: 0.2,
-        metalness: 0.8,
-        wireframe: false
       });
-      const bodyMesh = new THREE.Mesh(geo, mat);
-      group.add(bodyMesh);
+      const pts = laserLine.geometry.attributes.position;
+      pts.setXYZ(0, e.pos.x, e.pos.y, e.pos.z);
+      pts.setXYZ(1, e.pos.x + aimDir.x * 12, e.pos.y + aimDir.y * 12, e.pos.z + aimDir.z * 12);
+      pts.needsUpdate = true;
+      laserMat.opacity = 0.75;
 
-      // ワイヤーフレーム外殻
-      const wireMat = new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true, transparent: true, opacity: 0.35 });
-      group.add(new THREE.Mesh(geo, wireMat));
-
-      // 「粘」や「スリップ」で崩れた際に露出する「発（寸勁）の法線ターゲットリング」
-      const ringGeo = new THREE.RingGeometry(radius * 0.55, radius * 0.72, 24);
-      const ringMat = new THREE.MeshBasicMaterial({
-        color: 0xffea00,
-        side: THREE.DoubleSide,
-        transparent: true,
-        opacity: 0.0
-      });
-      const targetRing = new THREE.Mesh(ringGeo, ringMat);
-      targetRing.position.z = radius * 0.6;
-      group.add(targetRing);
-
-      scene.add(group);
-      return { group, bodyMesh, mat, targetRing, ringMat, radius, mass, baseColor: color };
-    }
-
-    function spawnEnemy({ type, angleDeg, dist, speed }) {
-      const visual = createEnemyMesh(type);
-      const rad = THREE.MathUtils.degToRad(angleDeg);
-      const startPos = new THREE.Vector3(
-        Math.sin(rad) * dist,
-        type === 'Viper' ? 1.58 : 1.38, // Viperは顔面（HMD高さ）を正確に狙う
-        -Math.cos(rad) * dist
-      );
-      visual.group.position.copy(startPos);
-
-      const targetPos = new THREE.Vector3(0, type === 'Viper' ? 1.58 : 1.35, 0);
-      const vel = new THREE.Vector3().subVectors(targetPos, startPos).normalize().multiplyScalar(speed);
-      visual.group.lookAt(targetPos);
-
-      enemies.push({
-        type,
-        ...visual,
-        pos: visual.group.position,
-        vel,
-        incomingSpeed: speed,
-        state: 'APPROACHING', // APPROACHING | NEN | SLIPPED | LAUNCHED
-        nenEfficiency: 1.0,
-        nenTimer: 0,
-        chainCount: 0
-      });
-    }
-
-    function spawnBurstParticles(pos, colorHex, count = 18) {
-      for (let i = 0; i < count; i++) {
-        const geo = new THREE.OctahedronGeometry(0.06, 0);
-        const mat = new THREE.MeshBasicMaterial({ color: colorHex, transparent: true, opacity: 1 });
-        const mesh = new THREE.Mesh(geo, mat);
-        mesh.position.copy(pos);
-        scene.add(mesh);
-        const vel = new THREE.Vector3(
-          (Math.random() - 0.5) * 9,
-          (Math.random() - 0.3) * 9,
-          (Math.random() - 0.5) * 9
-        );
-        particles.push({ mesh, mat, vel, life: 0.55 });
-      }
-    }
-
-    function spawnShockwaveRing(pos, dirVec, colorHex = 0xffd54f, maxScale = 3.5) {
-      const geo = new THREE.RingGeometry(0.15, 0.24, 32);
-      const mat = new THREE.MeshBasicMaterial({ color: colorHex, side: THREE.DoubleSide, transparent: true, opacity: 0.95 });
-      const mesh = new THREE.Mesh(geo, mat);
-      mesh.position.copy(pos);
-      const lookTarget = pos.clone().add(dirVec);
-      mesh.lookAt(lookTarget);
-      scene.add(mesh);
-      shockwaves.push({ mesh, mat, scaleSpeed: maxScale * 4.5, life: 0.35 });
-    }
-
-    // =========================================================================
-    // 6. ゲームステート＆UIポップアップ制御
-    // =========================================================================
-    const gameState = {
-      waveIdx: 0,
-      waveTimer: 0,
-      spawnTimer: 0.8,
-      spawnBatchCount: 0,
-      killsInWave: 0,
-      pendingSpawns: [],
-      timeScale: 1.0,
-      dilationTimer: 0,
-      hitStopTimer: 0,
-      score: 0,
-      chain: 0,
-      hp: 3,
-      isGameOver: false,
-      isVictory: false
-    };
-
-    const elWave = document.getElementById('hud-wave');
-    const elTimeScale = document.getElementById('hud-timescale');
-    const elScore = document.getElementById('hud-score');
-    const elChain = document.getElementById('hud-chain');
-    const elHp = document.getElementById('hud-hp');
-    const elBannerTitle = document.getElementById('banner-title');
-    const elBannerSub = document.getElementById('banner-sub');
-    const elJudge = document.getElementById('judge-text');
-    const elVignette = document.getElementById('dilation-vignette');
-
-    let judgeTimeout = null;
-    function showJudgePopup(text, color = '#00e5ff') {
-      elJudge.textContent = text;
-      elJudge.style.color = color;
-      const wDef = WAVE_DEFINITIONS[gameState.waveIdx] || WAVE_DEFINITIONS[0];
-      updateVrHudCanvas(wDef.title, text, color);
-      if (judgeTimeout) clearTimeout(judgeTimeout);
-      judgeTimeout = setTimeout(() => {
-        elJudge.textContent = '';
-      }, 1400);
-    }
-
-    function updateHudDisplay() {
-      elWave.textContent = `${gameState.waveIdx + 1} / 5`;
-      elTimeScale.textContent = `${gameState.timeScale.toFixed(2)}x`;
-      elScore.textContent = gameState.score.toLocaleString();
-      elChain.textContent = gameState.chain;
-      elHp.textContent = '♥'.repeat(Math.max(0, gameState.hp)) + '♡'.repeat(Math.max(0, 3 - gameState.hp));
-
-      if (gameState.timeScale <= 0.16) {
-        elVignette.style.boxShadow = 'inset 0 0 110px rgba(255, 42, 133, 0.65)';
-      } else if (gameState.timeScale <= 0.35) {
-        elVignette.style.boxShadow = 'inset 0 0 90px rgba(0, 229, 255, 0.55)';
-      } else {
-        elVignette.style.boxShadow = 'none';
-      }
-    }
-
-    function startWave(idx) {
-      gameState.waveIdx = THREE.MathUtils.clamp(idx, 0, WAVE_DEFINITIONS.length - 1);
-      gameState.waveTimer = 0;
-      gameState.spawnTimer = 1.0;
-      gameState.spawnBatchCount = 0;
-      gameState.killsInWave = 0;
-      gameState.pendingSpawns = [];
-
-      const wDef = WAVE_DEFINITIONS[gameState.waveIdx];
-      elBannerTitle.textContent = wDef.title;
-      elBannerSub.textContent = wDef.sub;
-      guideGroup.visible = (gameState.waveIdx === 0);
-      updateVrHudCanvas(wDef.title, 'READY', '#00e5ff');
-      updateHudDisplay();
-    }
-
-    function clearAllEnemies() {
-      while (enemies.length > 0) {
-        const e = enemies.pop();
-        scene.remove(e.group);
-      }
-    }
-
-    function resetGame() {
-      clearAllEnemies();
-      gameState.score = 0;
-      gameState.chain = 0;
-      gameState.hp = 3;
-      gameState.timeScale = 1.0;
-      gameState.dilationTimer = 0;
-      gameState.hitStopTimer = 0;
-      gameState.isGameOver = false;
-      gameState.isVictory = false;
-      startWave(0);
-      showJudgePopup('START!', '#00e5ff');
-    }
-
-    document.getElementById('btn-audio').addEventListener('click', () => {
-      audio.resume();
-      showJudgePopup('音響エンジン起動完了', '#00e5ff');
-    });
-    document.getElementById('btn-wave-skip').addEventListener('click', () => {
-      audio.resume();
-      clearAllEnemies();
-      startWave((gameState.waveIdx + 1) % WAVE_DEFINITIONS.length);
-    });
-    document.getElementById('btn-restart').addEventListener('click', () => {
-      audio.resume();
-      resetGame();
-    });
-
-    // =========================================================================
-    // 7. コア物理ループ（粘・発・スリップ・運動量借用・ビリヤード連鎖）
-    // =========================================================================
-    function updateControllersAndHands(rawDt) {
-      const xrCam = renderer.xr.isPresenting ? renderer.xr.getCamera() : camera;
-      xrCam.getWorldPosition(hmdState.pos);
-      const curQuat = new THREE.Quaternion();
-      xrCam.getWorldQuaternion(curQuat);
-
-      // HMDの回旋角速度を算出（スリッピング判定）
-      const angleDiff = 2 * Math.acos(Math.min(1, Math.abs(curQuat.dot(hmdState.prevQuat))));
-      const computedAngVel = rawDt > 0 ? angleDiff / rawDt : 0;
-      hmdState.angularSpeed = Math.max(computedAngVel, hmdState.angularSpeed * 0.85);
-      hmdState.prevQuat.copy(curQuat);
-      if (hmdState.slipCooldown > 0) hmdState.slipCooldown -= rawDt;
-
-      if (renderer.xr.isPresenting) {
-        // VRモード：左右コントローラーのワールド座標と法線を取得
-        controller0.getWorldPosition(leftHand.pos);
-        controller0.getWorldQuaternion(leftHand.mesh.quaternion);
-        leftHand.normal.set(0, 0, -1).applyQuaternion(leftHand.mesh.quaternion).normalize();
-
-        controller1.getWorldPosition(rightHand.pos);
-        controller1.getWorldQuaternion(rightHand.mesh.quaternion);
-        rightHand.normal.set(0, 0, -1).applyQuaternion(rightHand.mesh.quaternion).normalize();
-      } else {
-        // PCモード：マウスで前手（円弧誘導）、クリック/Spaceで後手（寸勁突き）をシミュレート
-        const targetX = pcInput.mouseX * 0.85;
-        const targetY = THREE.MathUtils.clamp(1.35 + pcInput.mouseY * 0.45, 0.9, 1.85);
-        leftHand.pos.lerp(new THREE.Vector3(targetX, targetY, -0.62), 0.35);
-
-        const rad = THREE.MathUtils.degToRad(pcInput.frontAngleDeg);
-        leftHand.mesh.rotation.set(0, -rad, 0);
-        leftHand.normal.set(Math.sin(rad), 0, -Math.cos(rad)).normalize();
-
-        if (pcInput.sunkeiTimer > 0) {
-          pcInput.sunkeiTimer -= rawDt;
-          rightHand.pos.lerp(new THREE.Vector3(targetX, targetY, -0.66), 0.65);
-          rightHand.currentStrokeDist = pcInput.strokeMode;
-          rightHand.peakAccel = pcInput.strokeMode <= 0.16 ? 38.0 : 18.0;
-        } else {
-          rightHand.pos.lerp(new THREE.Vector3(targetX + 0.18, targetY - 0.08, -0.32), 0.25);
+      // 後手「発（寸勁）」インパクト判定
+      if (e.pos.distanceTo(rear.pos) < e.r + 0.38 && (rear.speed > 1.05 || pc.punchT > 0)) {
+        const sDist = Math.max(0.05, rear.strokeDist || 0.08);
+        if (sDist > 0.28) {
+          sfx.guardBreak(); rear.haptic(0.8, 100);
+          popJudge(`OVER-SWING 大振り減衰 (${(sDist * 100).toFixed(0)}cm)`, '#ff2a6d');
+          e.vel.multiplyScalar(-0.4); e.st = 'IN'; continue;
         }
-        rightHand.normal.set(pcInput.mouseX * 0.35, pcInput.mouseY * 0.15, -1).normalize();
-      }
+        const crit = sDist <= 0.15;
+        const pen = Math.exp(-Math.max(0, sDist - 0.15) / 0.12);
+        const launchSpd = ((rear.peakAccel || 35) * 0.5 * pen + e.inSpeed * e.eff) * (crit ? 1.25 : 1.0);
 
-      leftHand.update(rawDt);
-      rightHand.update(rawDt);
+        e.vel.copy(aimDir).multiplyScalar(Math.max(22, launchSpd));
+        e.st = 'OUT'; e.ringMat.opacity = 0;
+        e.mat.color.setHex(0xffea00); e.mat.emissive.setHex(0xffea00);
 
-      // 体幹（HMD）からより前方（敵側）に出ている手を「前手（粘）」、手前にある手を「後手（発）」として動的割り当て
-      const leftDistZ = Math.abs(leftHand.pos.z - hmdState.pos.z);
-      const rightDistZ = Math.abs(rightHand.pos.z - hmdState.pos.z);
-      if (leftDistZ >= rightDistZ - 0.05) {
-        return { frontHand: leftHand, rearHand: rightHand };
-      } else {
-        return { frontHand: rightHand, rearHand: leftHand };
-      }
-    }
-
-    function executeSunkeiLaunch(enemy, rearHand, frontHand) {
-      // 寸勁のストローク距離減衰判定：15cm以内なら減衰なし（1.0）、大振り（>25cm）は指数減衰
-      const strokeDist = Math.max(0.05, rearHand.currentStrokeDist || 0.09);
-      const strokePenalty = Math.exp(-Math.max(0, strokeDist - 0.15) / 0.12);
-      const peakAccel = Math.max(24.0, rearHand.peakAccel || 32.0);
-
-      // 大振りペナルティ（ストローク28cm超で居着き弾かれ）
-      if (strokeDist > 0.28 && enemy.state !== 'SLIPPED') {
-        audio.playClashPenalty();
-        rearHand.pulseHaptics(0.9, 120);
-        showJudgePopup(`居着き（大振り減衰 ${(strokeDist * 100).toFixed(0)}cm）!`, '#ff5252');
-        enemy.vel.multiplyScalar(-0.35);
-        enemy.state = 'APPROACHING';
-        return;
-      }
-
-      const isCritical = strokeDist <= 0.15;
-      const slipBonus = enemy.state === 'SLIPPED' ? 1.35 : 1.0;
-
-      // 運動量借用（Vector Counter）：敵の突進初速 × 粘維持率 をそのまま射出速度に加算
-      const borrowedMomentum = enemy.incomingSpeed * enemy.nenEfficiency * 0.9;
-      const launchSpeed = (peakAccel * 0.45 * strokePenalty + borrowedMomentum) * slipBonus;
-
-      // 射出方向ベクトル：前手の位置や後手の法線ベクトルを合成し、近くの別敵へ磁力補正（ビリヤード補助）
-      const aimDir = rearHand.normal.clone();
-      aimDir.z = Math.min(-0.5, aimDir.z);
-      aimDir.normalize();
-
-      // 前方扇状にいる別の敵がいれば、円弧誘導方向にいる敵へ緩やかにホーミング補正（多人数掛けの爽快感向上）
-      let bestTarget = null;
-      let bestDot = 0.72;
-      for (const other of enemies) {
-        if (other === enemy || other.state === 'LAUNCHED') continue;
-        const toOther = new THREE.Vector3().subVectors(other.pos, enemy.pos).normalize();
-        const dot = aimDir.dot(toOther);
-        if (dot > bestDot) {
-          bestDot = dot;
-          bestTarget = toOther;
-        }
-      }
-      if (bestTarget) {
-        aimDir.lerp(bestTarget, 0.65).normalize();
-      }
-
-      enemy.vel.copy(aimDir).multiplyScalar(Math.max(18.0, launchSpeed));
-      enemy.state = 'LAUNCHED';
-      enemy.ringMat.opacity = 0;
-      enemy.mat.color.setHex(isCritical ? 0xffea00 : 0x00ffcc);
-      enemy.mat.emissive.setHex(isCritical ? 0xffea00 : 0x00ffcc);
-
-      // Wave 5 Boss Core 撃破時は 0.6秒の完全ヒットストップ＋全方位逆噴射フィナーレ
-      if (enemy.type === 'Boss') {
-        gameState.hitStopTimer = 0.6;
-        audio.playSunkeiImpact(true);
-        rearHand.pulseHaptics(1.0, 350);
-        frontHand.pulseHaptics(1.0, 350);
-        spawnShockwaveRing(enemy.pos, aimDir, 0xffd54f, 8.0);
-        spawnBurstParticles(enemy.pos, 0xffd54f, 45);
-        showJudgePopup('極限浸透勁！！ BOSS CORE 逆噴射粉砕！', '#ffd54f');
-        return;
-      }
-
-      audio.playSunkeiImpact(isCritical);
-      rearHand.pulseHaptics(isCritical ? 1.0 : 0.65, isCritical ? 90 : 50);
-      spawnShockwaveRing(enemy.pos, aimDir, isCritical ? 0xffea00 : 0x00e5ff, isCritical ? 3.8 : 2.2);
-
-      gameState.timeScale = 1.0;
-      gameState.dilationTimer = 0;
-      gameState.score += isCritical ? 300 : 150;
-
-      if (isCritical) {
-        showJudgePopup(`極・寸勁 CRITICAL! (${(strokeDist * 100).toFixed(0)}cm / ${launchSpeed.toFixed(1)}m/s)`, '#ffd54f');
-      } else {
-        showJudgePopup(`発 COUNTER! (${launchSpeed.toFixed(1)}m/s)`, '#00e5ff');
-      }
-      updateHudDisplay();
-    }
-
-    // =========================================================================
-    // 8. メインゲームループ（60〜90Hz WebXR対応）
-    // =========================================================================
-    const clock = new THREE.Clock();
-
-    function animate() {
-      const rawDt = Math.min(clock.getDelta(), 0.05);
-
-      // ヒットストップ処理（Wave 5 Boss Core インパクト時）
-      if (gameState.hitStopTimer > 0) {
-        gameState.hitStopTimer -= rawDt;
-        if (gameState.hitStopTimer <= 0) {
-          // ヒットストップ解除と同時に残存敵を全て連鎖大爆発させて完全勝利
-          enemies.forEach((e) => {
-            spawnBurstParticles(e.pos, 0xffd54f, 24);
-            scene.remove(e.group);
-          });
-          enemies.length = 0;
-          audio.playChainHarmony(8);
-          gameState.score += 5000;
-          gameState.isVictory = true;
-          elBannerTitle.textContent = 'MASTER OF KAKEI - 完全制覇';
-          elBannerSub.textContent = `最終スコア: ${gameState.score.toLocaleString()} / トリガーまたは「即リトライ」で再挑戦`;
-          showJudgePopup('全5ウェーブ完全制覇！！', '#ffd54f');
-          updateHudDisplay();
-        }
-        renderer.render(scene, camera);
-        return;
-      }
-
-      const { frontHand, rearHand } = updateControllersAndHands(rawDt);
-
-      // タイムディレーション減衰管理
-      if (gameState.dilationTimer > 0) {
-        gameState.dilationTimer -= rawDt;
-        if (gameState.dilationTimer <= 0) {
-          gameState.timeScale = 1.0;
-          updateHudDisplay();
-        }
-      }
-
-      const scaledDt = rawDt * gameState.timeScale;
-      audio.updateTimeScaleAudio(gameState.timeScale, rawDt);
-
-      // Wave進行＆スポーン管理
-      if (!gameState.isGameOver && !gameState.isVictory) {
-        const wDef = WAVE_DEFINITIONS[gameState.waveIdx];
-        gameState.waveTimer += scaledDt;
-        gameState.spawnTimer -= scaledDt;
-
-        if (gameState.spawnTimer <= 0) {
-          const batch = wDef.pattern(gameState.spawnBatchCount++);
-          batch.forEach((item) => {
-            gameState.pendingSpawns.push({ ...item, timer: item.delay });
-          });
-          gameState.spawnTimer = wDef.spawnInterval;
+        if (e.type === 'Boss') {
+          state.win = true; state.hitStop = 0.55;
+          sfx.sunkei(true); rear.haptic(1, 350); front.haptic(1, 350);
+          addPulseRing(e.pos, aimDir, 0xffd000, 7.0); addSpark(e.pos, 0xffd000, 40, 18);
+          popJudge('極限浸透勁 // BOSS CORE SHATTERED!', '#ffd000'); continue;
         }
 
-        for (let i = gameState.pendingSpawns.length - 1; i >= 0; i--) {
-          const p = gameState.pendingSpawns[i];
-          p.timer -= scaledDt;
-          if (p.timer <= 0) {
-            spawnEnemy(p);
-            gameState.pendingSpawns.splice(i, 1);
-          }
-        }
+        sfx.sunkei(crit); rear.haptic(crit ? 1.0 : 0.65, 85);
+        addPulseRing(e.pos, aimDir, crit ? 0xffea00 : 0x00f0ff, crit ? 3.6 : 2.2);
+        addSpark(e.pos, crit ? 0xffea00 : 0x00f0ff, 14, 12);
+        state.scale = 1.0; state.dilT = 0; state.score += crit ? 350 : 180;
+        popJudge(crit ? `極・寸勁 SUNKEI! (${(sDist * 100).toFixed(0)}cm)` : 'COUNTER!', crit ? '#ffea00' : '#00f0ff');
+        syncUI();
 
-        // ウェーブクリア判定
-        if (gameState.killsInWave >= wDef.totalKillsTarget && enemies.length === 0 && gameState.pendingSpawns.length === 0) {
-          if (gameState.waveIdx < WAVE_DEFINITIONS.length - 1) {
-            audio.playChainHarmony(5);
-            startWave(gameState.waveIdx + 1);
-            showJudgePopup(`WAVE ${gameState.waveIdx + 1} START!`, '#00ffcc');
-          } else {
-            gameState.isVictory = true;
-            elBannerTitle.textContent = 'MASTER OF KAKEI - 完全制覇';
-            elBannerSub.textContent = `最終スコア: ${gameState.score.toLocaleString()} / トリガーまたは「即リトライ」で再挑戦`;
-          }
-        }
+      } else if (e.timer <= 0) {
+        // 0.48秒以内に打たなかった場合は脇をすり抜けて消滅（ダラダラ残らない）
+        scene.remove(e.group); enemies.splice(i, 1); state.kills++;
       }
 
-      // 敵の移動・接触判定・ビリヤード連鎖更新
-      for (let i = enemies.length - 1; i >= 0; i--) {
-        const e = enemies[i];
+    } else if (e.st === 'OUT') {
+      // 高速射出＆ビリヤード連鎖
+      e.pos.addScaledVector(e.vel, dt);
+      e.mesh.rotation.x += 15 * dt; e.mesh.rotation.y += 15 * dt;
 
-        if (e.state === 'APPROACHING') {
-          e.pos.addScaledVector(e.vel, scaledDt);
-          e.bodyMesh.rotation.z += 2.5 * scaledDt;
-
-          // 1) 前手「粘（Nen）」接触判定
-          const distToFront = e.pos.distanceTo(frontHand.pos);
-          if (distToFront < e.radius + 0.26 && e.type !== 'Viper') {
-            // 敵進行ベクトルと前手法線の角度計算
-            const inDir = e.vel.clone().normalize().negate();
-            const dot = THREE.MathUtils.clamp(inDir.dot(frontHand.normal), -1, 1);
-            const contactAngleDeg = THREE.MathUtils.radToDeg(Math.acos(dot));
-
-            // 適正角度（30°〜60°、実践許容22°〜68°）なら「粘」発動
-            if (contactAngleDeg >= 22 && contactAngleDeg <= 68) {
-              e.state = 'NEN';
-              e.nenTimer = 1.8;
-              e.nenEfficiency = 1.0 - Math.abs(45 - contactAngleDeg) / 45;
-              e.ringMat.opacity = 0.95;
-              gameState.timeScale = 0.30;
-              gameState.dilationTimer = 1.8;
-              audio.playNenAttach();
-              frontHand.pulseHaptics(0.25, 45); // 滑らかな微細パルス
-              showJudgePopup(`粘 NEN 吸着! (${contactAngleDeg.toFixed(0)}° / 0.30x)`, '#00e5ff');
-              updateHudDisplay();
-            } else {
-              // 角度不一致（正面衝突居着き）
-              audio.playClashPenalty();
-              frontHand.pulseHaptics(0.85, 100);
-              showJudgePopup(`角度不適 居着き! (${contactAngleDeg.toFixed(0)}°)`, '#ff5252');
-              e.vel.multiplyScalar(0.5);
-            }
-          }
-
-         // 2) 頭部見切り「スリッピング（Slip）」判定（顔面直撃寸前の首回旋）
-          const distToHead = e.pos.distanceTo(hmdState.pos);
-          if (distToHead < 1.15 && distToHead > 0.25 && hmdState.angularSpeed > 1.35 && hmdState.slipCooldown <= 0) {
-            e.state = 'SLIPPED';
-            e.nenTimer = 2.1;
-            e.nenEfficiency = 1.25;
-            e.ringMat.opacity = 1.0;
-            // 目の前の側面へスロー誘導配置
-            e.pos.set(e.pos.x >= 0 ? 0.32 : -0.32, 1.38, -0.58);
-            hmdState.slipCooldown = 0.9;
-            gameState.timeScale = 0.15;
-            gameState.dilationTimer = 2.1;
-            if (gameState.hp < 3) gameState.hp++; // スリップ成功でHP+1回復
-            audio.playSlipTrigger();
-            showJudgePopup('見切り SLIP!! 0.15x 確定反撃チャンス (HP回復)', '#ff69b4');
-            updateHudDisplay();
-          }
-
-          // 3) プレイヤー被弾判定
-          if (e.pos.z > -0.18) {
-            spawnBurstParticles(e.pos, 0xff1744, 15);
-            audio.playClashPenalty();
-            scene.remove(e.group);
-            enemies.splice(i, 1);
-            gameState.hp--;
-            gameState.chain = 0;
-            showJudgePopup('DAMAGE! 被弾', '#ff1744');
-            if (gameState.hp <= 0) {
-              gameState.isGameOver = true;
-              elBannerTitle.textContent = 'GAME OVER - 居着き敗北';
-              elBannerSub.textContent = 'トリガーまたは右下の「即リトライ」で即座に再挑戦できます';
-            }
-            updateHudDisplay();
-            continue;
-          }
-        } else if (e.state === 'NEN' || e.state === 'SLIPPED') {
-          // 「粘」中は前手の円弧軌道に吸い付いて誘導される
-          e.nenTimer -= rawDt;
-          if (e.state === 'NEN') {
-            const targetArcPos = frontHand.pos.clone().addScaledVector(frontHand.normal, 0.28);
-            e.pos.lerp(targetArcPos, 0.28);
-          }
-          e.targetRing.lookAt(hmdState.pos);
-
-          // 後手「発（寸勁）」接触判定
-          const distToRear = e.pos.distanceTo(rearHand.pos);
-          const rearSpeed = rearHand.vel.length();
-          if (distToRear < e.radius + 0.34 && (rearSpeed > 1.1 || pcInput.sunkeiTimer > 0)) {
-            executeSunkeiLaunch(e, rearHand, frontHand);
-          } else if (e.nenTimer <= 0) {
-            // 時間切れで離脱撃破扱い
-            scene.remove(e.group);
-            enemies.splice(i, 1);
-            gameState.killsInWave++;
-          }
-        } else if (e.state === 'LAUNCHED') {
-          // 射出された敵の高速移動＆他敵とのビリヤード連鎖衝突判定
-          e.pos.addScaledVector(e.vel, rawDt);
-          e.bodyMesh.rotation.x += 12 * rawDt;
-          e.bodyMesh.rotation.y += 12 * rawDt;
-
-          for (let j = enemies.length - 1; j >= 0; j--) {
-            if (i === j) continue;
-            const other = enemies[j];
-            if (other.state === 'LAUNCHED') continue;
-
-            if (e.pos.distanceTo(other.pos) < e.radius + other.radius + 0.35) {
-              // ビリヤード連鎖撃破！
-              gameState.chain++;
-              gameState.killsInWave++;
-              const bonus = 250 * gameState.chain;
-              gameState.score += bonus;
-              audio.playChainHarmony(gameState.chain);
-              spawnBurstParticles(other.pos, other.baseColor, 22);
-              spawnShockwaveRing(other.pos, e.vel, 0x00ffcc, 2.6);
-              showJudgePopup(`化勁ビリヤード ${gameState.chain} CHAIN! (+${bonus})`, '#00ffcc');
-
-              scene.remove(other.group);
-              enemies.splice(j, 1);
-              if (j < i) i--;
-              updateHudDisplay();
-            }
-          }
-
-          // 遠方到達で消滅
-          if (e.pos.length() > 22) {
-            scene.remove(e.group);
-            enemies.splice(i, 1);
-            gameState.killsInWave++;
-          }
+      for (let j = enemies.length - 1; j >= 0; j--) {
+        if (i === j || enemies[j].st === 'OUT') continue;
+        if (e.pos.distanceTo(enemies[j].pos) < e.r + enemies[j].r + 0.42) {
+          state.chain++; state.kills++; state.score += 300 * state.chain;
+          sfx.chain(state.chain);
+          addSpark(enemies[j].pos, enemies[j].col, 20, 14);
+          addPulseRing(enemies[j].pos, e.vel, 0x00ffcc, 2.8);
+          popJudge(`CHAIN x${state.chain} // 連消帯打!`, '#00ffcc');
+          scene.remove(enemies[j].group); enemies.splice(j, 1);
+          if (j < i) i--;
+          syncUI();
         }
       }
-
-      // パーティクル＆衝撃波リング更新
-      for (let i = particles.length - 1; i >= 0; i--) {
-        const p = particles[i];
-        p.life -= rawDt;
-        p.mesh.position.addScaledVector(p.vel, rawDt);
-        p.mat.opacity = Math.max(0, p.life / 0.55);
-        if (p.life <= 0) {
-          scene.remove(p.mesh);
-          particles.splice(i, 1);
-        }
-      }
-
-      for (let i = shockwaves.length - 1; i >= 0; i--) {
-        const s = shockwaves[i];
-        s.life -= rawDt;
-        const sc = 1 + (0.35 - s.life) * s.scaleSpeed;
-        s.mesh.scale.set(sc, sc, 1);
-        s.mat.opacity = Math.max(0, s.life / 0.35);
-        if (s.life <= 0) {
-          scene.remove(s.mesh);
-          shockwaves.splice(i, 1);
-        }
-      }
-
-      renderer.render(scene, camera);
+      if (e.pos.length() > 24) { scene.remove(e.group); enemies.splice(i, 1); state.kills++; }
     }
+  }
 
-    window.addEventListener('resize', () => {
-      camera.aspect = window.innerWidth / window.innerHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight);
-    });
+  for (let i = parts.length - 1; i >= 0; i--) {
+    const p = parts[i]; p.life -= dt; p.m.position.addScaledVector(p.v, dt); p.m.material.opacity = p.life * 2.5;
+    if (p.life <= 0) { scene.remove(p.m); parts.splice(i, 1); }
+  }
+  for (let i = rings.length - 1; i >= 0; i--) {
+    const r = rings[i]; r.life -= dt;
+    const sc = 1 + (0.25 - r.life) * r.spd; r.m.scale.set(sc, sc, 1); r.mat.opacity = r.life * 3.5;
+    if (r.life <= 0) { scene.remove(r.m); rings.splice(i, 1); }
+  }
 
-    startWave(0);
-    renderer.setAnimationLoop(animate);
-  </script>
+  renderer.render(scene, camera);
+});
+
+addEventListener('resize', () => { camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight); });
+setWave(0);
+</script>
 </body>
 </html>
